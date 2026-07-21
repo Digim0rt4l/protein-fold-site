@@ -1,8 +1,7 @@
-const path = require("path");
 const { getJsonFile } = require("./_github");
-const geometry = require(path.join(__dirname, "..", "..", "js", "geometry.js"));
-const energy = require(path.join(__dirname, "..", "..", "js", "energy.js"));
-const protein = require(path.join(__dirname, "..", "..", "data", "protein.json"));
+const geometry = require("../../js/geometry.js");
+const energy = require("../../js/energy.js");
+const protein = require("../../data/protein.json");
 
 const STATE_PATH = "data/state.json";
 const UNIT_WIDTH = 10;

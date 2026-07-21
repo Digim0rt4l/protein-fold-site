@@ -1,7 +1,6 @@
-const path = require("path");
 const { updateJsonFile } = require("./_github");
 const { STATE_PATH, expireOldClaims } = require("./_state");
-const energy = require(path.join(__dirname, "..", "..", "js", "energy.js"));
+const energy = require("../../js/energy.js");
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
