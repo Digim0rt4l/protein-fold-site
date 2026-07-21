@@ -49,19 +49,18 @@ function formatEnergy(value) {
   return value == null ? "\u2014" : value.toFixed(2);
 }
 
-function caTraceFromPhiPsi(phiPsi) {
-  const residues = window.ProteinGeometry.buildBackbone(phiPsi.length, phiPsi);
-  return window.ProteinGeometry.caTrace(residues);
+function residuesFromPhiPsi(phiPsi, sequence) {
+  return window.ProteinGeometry.buildBackbone(sequence, phiPsi);
 }
 
 function renderCurrentView() {
   if (!window.ProteinViewer) return;
   if (currentView === "global" && latestGlobal) {
-    window.ProteinViewer.render(latestGlobal.caTrace, latestGlobal.helices, null);
+    window.ProteinViewer.render(latestGlobal.residues, latestGlobal.helices, null);
   } else if (currentView === "mine" && latestMine) {
-    window.ProteinViewer.render(latestMine.caTrace, latestMine.helices, latestMine.activeResidue);
+    window.ProteinViewer.render(latestMine.residues, latestMine.helices, latestMine.activeResidue);
   } else if (latestGlobal) {
-    window.ProteinViewer.render(latestGlobal.caTrace, latestGlobal.helices, null);
+    window.ProteinViewer.render(latestGlobal.residues, latestGlobal.helices, null);
   }
 }
 
@@ -97,7 +96,7 @@ async function fetchStatus() {
   if (!response.ok) throw new Error("status fetch failed");
   const data = await response.json();
   latestGlobal = {
-    caTrace: caTraceFromPhiPsi(data.phiPsi),
+    residues: residuesFromPhiPsi(data.phiPsi, data.protein.sequence),
     helices: data.protein.helices,
     initialEnergy: data.initialEnergy,
     energy: data.energy,
@@ -148,7 +147,7 @@ async function contributionLoop() {
       els.deviceStatus.textContent = "optimizing";
 
       const helices = claim.protein.helices;
-      const residueCount = claim.protein.residueCount;
+      const sequence = claim.protein.sequence;
       const activeWorker = ensureWorker();
 
       const result = await new Promise((resolve, reject) => {
@@ -159,7 +158,7 @@ async function contributionLoop() {
             els.unitPct.textContent = percent + "%";
             els.unitFill.style.width = percent + "%";
             latestMine = {
-              caTrace: message.caTrace,
+              residues: message.residues,
               helices,
               activeResidue: message.activeResidue
             };
@@ -171,7 +170,7 @@ async function contributionLoop() {
         activeWorker.onerror = reject;
         activeWorker.postMessage({
           type: "start",
-          job: { dihedrals: claim.phiPsi, helices, residueCount, timeBudgetMs: TIME_BUDGET_MS }
+          job: { dihedrals: claim.phiPsi, helices, sequence, timeBudgetMs: TIME_BUDGET_MS }
         });
       });
 
@@ -181,7 +180,7 @@ async function contributionLoop() {
       els.deviceCompleted.textContent = deviceCompletedCount;
 
       latestGlobal = {
-        caTrace: caTraceFromPhiPsi(submission.phiPsi),
+        residues: residuesFromPhiPsi(submission.phiPsi, sequence),
         helices,
         initialEnergy: latestGlobal ? latestGlobal.initialEnergy : submission.energy,
         energy: submission.energy,

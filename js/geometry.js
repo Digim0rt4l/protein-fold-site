@@ -16,6 +16,27 @@
   const COIL_PHI_DEG = -120;
   const COIL_PSI_DEG = 140;
 
+  const BOND_LENGTH_CA_CB = 1.53;
+  const BOND_ANGLE_C_CA_CB = 110.5 * DEG_TO_RAD;
+  const DIHEDRAL_N_C_CA_CB = 122.5 * DEG_TO_RAD;
+
+  const BOND_LENGTH_CB_SC = 1.52;
+  const BOND_ANGLE_CA_CB_SC = 114.0 * DEG_TO_RAD;
+
+  const SIDE_CHAIN_SIZE = {
+    G: 0, A: 1, S: 1, C: 1,
+    V: 2, T: 2, D: 2, N: 2, P: 2, L: 2, I: 2, M: 2, Q: 2, E: 2, H: 2, K: 2,
+    F: 3, R: 3, Y: 3, W: 3
+  };
+
+  function hasSideChain(residueType) {
+    return residueType !== "G";
+  }
+
+  function hasChi1(residueType) {
+    return residueType !== "G" && residueType !== "A";
+  }
+
   function subtract(a, b) {
     return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
   }
@@ -76,21 +97,22 @@
     for (let i = 0; i < residueCount; i++) {
       dihedrals.push({
         phi: COIL_PHI_DEG + (random() - 0.5) * 30,
-        psi: COIL_PSI_DEG + (random() - 0.5) * 30
+        psi: COIL_PSI_DEG + (random() - 0.5) * 30,
+        chi1: random() * 360 - 180
       });
     }
     return dihedrals;
   }
 
-  function buildBackbone(residueCount, dihedrals) {
+  function buildBackbone(sequence, dihedrals) {
+    const residueCount = sequence.length;
     const atoms = [];
 
-    atoms.push({ name: "N", x: 0, y: 0, z: 0 });
-    atoms.push({ name: "CA", x: BOND_LENGTH_N_CA, y: 0, z: 0 });
+    atoms.push({ x: 0, y: 0, z: 0 });
+    atoms.push({ x: BOND_LENGTH_N_CA, y: 0, z: 0 });
 
     const bootstrapAngle = Math.PI - BOND_ANGLE_N_CA_C;
     atoms.push({
-      name: "C",
       x: BOND_LENGTH_N_CA + BOND_LENGTH_CA_C * Math.cos(bootstrapAngle),
       y: BOND_LENGTH_CA_C * Math.sin(bootstrapAngle),
       z: 0
@@ -102,33 +124,33 @@
       const prevC = atoms[atoms.length - 1];
 
       const psi = dihedrals[residue - 1].psi * DEG_TO_RAD;
-      const nextN = placeAtom(prevN, prevCA, prevC, BOND_LENGTH_C_N, BOND_ANGLE_CA_C_N, psi);
-      atoms.push({ name: "N", ...nextN });
+      atoms.push(placeAtom(prevN, prevCA, prevC, BOND_LENGTH_C_N, BOND_ANGLE_CA_C_N, psi));
 
       const nextCA = placeAtom(prevCA, prevC, atoms[atoms.length - 1], BOND_LENGTH_N_CA, BOND_ANGLE_C_N_CA, OMEGA_TRANS);
-      atoms.push({ name: "CA", ...nextCA });
+      atoms.push(nextCA);
 
       const phi = dihedrals[residue].phi * DEG_TO_RAD;
-      const nextC = placeAtom(prevC, atoms[atoms.length - 2], atoms[atoms.length - 1], BOND_LENGTH_CA_C, BOND_ANGLE_N_CA_C, phi);
-      atoms.push({ name: "C", ...nextC });
+      atoms.push(placeAtom(prevC, atoms[atoms.length - 2], atoms[atoms.length - 1], BOND_LENGTH_CA_C, BOND_ANGLE_N_CA_C, phi));
     }
 
     const residues = [];
     for (let residue = 0; residue < residueCount; residue++) {
       const base = residue * 3;
-      residues.push({ N: atoms[base], CA: atoms[base + 1], C: atoms[base + 2] });
+      const residueType = sequence[residue];
+      const N = atoms[base];
+      const CA = atoms[base + 1];
+      const C = atoms[base + 2];
+      const CB = hasSideChain(residueType) ? placeAtom(N, C, CA, BOND_LENGTH_CA_CB, BOND_ANGLE_C_CA_CB, DIHEDRAL_N_C_CA_CB) : null;
+      const chi1 = dihedrals[residue].chi1 * DEG_TO_RAD;
+      const SC = hasChi1(residueType) ? placeAtom(N, CA, CB, BOND_LENGTH_CB_SC, BOND_ANGLE_CA_CB_SC, chi1) : null;
+      residues.push({ N, CA, C, CB, SC, residueType, sideChainSize: SIDE_CHAIN_SIZE[residueType] || 1 });
     }
     return residues;
   }
 
-  function caTrace(residues) {
-    return residues.map((residue) => ({ x: residue.CA.x, y: residue.CA.y, z: residue.CA.z }));
-  }
-
   const api = {
     defaultDihedrals,
-    buildBackbone,
-    caTrace
+    buildBackbone
   };
 
   if (typeof module !== "undefined" && module.exports) {

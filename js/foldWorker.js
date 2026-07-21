@@ -3,28 +3,29 @@ importScripts("geometry.js", "energy.js");
 let running = false;
 
 function cloneDihedrals(dihedrals) {
-  return dihedrals.map((d) => ({ phi: d.phi, psi: d.psi }));
+  return dihedrals.map((d) => ({ phi: d.phi, psi: d.psi, chi1: d.chi1 }));
 }
 
-function buildMovableDegreesOfFreedom(residueCount) {
+function buildMovableDegreesOfFreedom(sequence) {
   const degreesOfFreedom = [];
-  for (let i = 0; i < residueCount; i++) {
+  for (let i = 0; i < sequence.length; i++) {
     if (i > 0) degreesOfFreedom.push({ index: i, key: "phi" });
-    if (i < residueCount - 1) degreesOfFreedom.push({ index: i, key: "psi" });
+    if (i < sequence.length - 1) degreesOfFreedom.push({ index: i, key: "psi" });
+    if (sequence[i] !== "G" && sequence[i] !== "A") degreesOfFreedom.push({ index: i, key: "chi1" });
   }
   return degreesOfFreedom;
 }
 
 function runAnnealing(job) {
-  const { dihedrals: startDihedrals, helices, residueCount, timeBudgetMs } = job;
+  const { dihedrals: startDihedrals, helices, sequence, timeBudgetMs } = job;
   const dihedrals = cloneDihedrals(startDihedrals);
-  let residues = self.ProteinGeometry.buildBackbone(residueCount, dihedrals);
+  let residues = self.ProteinGeometry.buildBackbone(sequence, dihedrals);
   let energy = self.ProteinEnergy.totalEnergy(residues, dihedrals, helices);
 
   let bestDihedrals = cloneDihedrals(dihedrals);
   let bestEnergy = energy;
 
-  const degreesOfFreedom = buildMovableDegreesOfFreedom(residueCount);
+  const degreesOfFreedom = buildMovableDegreesOfFreedom(sequence);
   const startTemp = 3.0;
   const endTemp = 0.02;
   const startTime = Date.now();
@@ -46,7 +47,7 @@ function runAnnealing(job) {
     const proposedValue = previousValue + (Math.random() - 0.5) * 2 * maxStepDeg;
     dihedrals[move.index][move.key] = proposedValue;
 
-    const candidateResidues = self.ProteinGeometry.buildBackbone(residueCount, dihedrals);
+    const candidateResidues = self.ProteinGeometry.buildBackbone(sequence, dihedrals);
     const candidateEnergy = self.ProteinEnergy.totalEnergy(candidateResidues, dihedrals, helices);
     const delta = candidateEnergy - energy;
     const accept = delta < 0 || Math.random() < Math.exp(-delta / temperature);
@@ -71,7 +72,7 @@ function runAnnealing(job) {
         timeBudgetMs,
         energy,
         bestEnergy,
-        caTrace: self.ProteinGeometry.caTrace(residues),
+        residues,
         activeResidue
       });
     }
