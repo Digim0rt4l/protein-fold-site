@@ -1,0 +1,16 @@
+{
+  "pdbId": "1IYT",
+  "name": "Amyloid beta-peptide (1-42)",
+  "shortName": "A\u03b242",
+  "organism": "Homo sapiens",
+  "relevance": "Aggregation of A\u03b242 into oligomers and fibrils is a central event in Alzheimer's disease. Understanding how this peptide folds and misfolds is directly relevant to the amyloid hypothesis and to structure-based drug design.",
+  "citation": "Crescenzi O, Tomaselli S, Guerrini R, Salvadori S, D'Ursi AM, Temussi PA, Picone D. \"Solution structure of the Alzheimer amyloid beta-peptide (1-42) in an apolar microenvironment.\" Eur J Biochem. 2002;269(22):5642-8.",
+  "source": "RCSB PDB entry 1IYT (SEQRES + HELIX records, NMR solution structure)",
+  "sequence": "DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVVIA",
+  "residueCount": 42,
+  "helices": [
+    { "start": 7, "end": 26, "label": "Helix 1" },
+    { "start": 27, "end": 40, "label": "Helix 2" }
+  ],
+  "note": "Backbone geometry is generated procedurally from standard alpha-helix parameters applied to the real, PDB-deposited secondary-structure assignment for this entry (helix-kink-helix, per RCSB header for 1IYT). This is a coarse-grained (C-alpha only) educational model, not the literal deposited atomic coordinates."
+}
