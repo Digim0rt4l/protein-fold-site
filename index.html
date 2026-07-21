@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Aβ42 Fold &mdash; distributed conformational search</title>
+<meta name="description" content="Contribute idle device compute to a distributed, browser-based conformational search of the Alzheimer's-linked amyloid-beta (1-42) peptide." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div id="bg-grid" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">Aβ</span>
+      <div class="brand-text">
+        <h1>Aβ42 Fold</h1>
+        <p>distributed conformational search &middot; PDB 1IYT &middot; Alzheimer&rsquo;s research</p>
+      </div>
+    </div>
+    <button id="about-btn" class="ghost-btn" aria-haspopup="dialog">What is this?</button>
+  </header>
+
+  <main class="stage">
+    <div id="viewer" class="viewer" role="img" aria-label="3D rendering of the amyloid-beta 42 peptide backbone"></div>
+
+    <div class="view-toggle" role="group" aria-label="Choose which structure to view">
+      <button class="toggle-option active" data-view="global" id="toggle-global">
+        <span class="dot dot-global"></span> Global best
+      </button>
+      <span class="toggle-slider" id="toggle-slider" aria-hidden="true"></span>
+      <button class="toggle-option" data-view="mine" id="toggle-mine">
+        <span class="dot dot-mine"></span> My work unit
+      </button>
+    </div>
+
+    <section class="panel stats-panel" aria-label="Live statistics">
+      <h2>Network</h2>
+      <dl class="stat-row">
+        <dt>Current best energy</dt>
+        <dd><span id="stat-energy" class="mono">&mdash;</span></dd>
+      </dl>
+      <dl class="stat-row">
+        <dt>Improvement so far</dt>
+        <dd><span id="stat-improvement" class="mono">&mdash;</span></dd>
+      </dl>
+      <dl class="stat-row">
+        <dt>Work units completed</dt>
+        <dd><span id="stat-completed" class="mono">0</span></dd>
+      </dl>
+      <dl class="stat-row">
+        <dt>Contributors seen</dt>
+        <dd><span id="stat-contributors" class="mono">0</span></dd>
+      </dl>
+      <dl class="stat-row">
+        <dt>Units claimed right now</dt>
+        <dd><span id="stat-claimed" class="mono">0 / 0</span></dd>
+      </dl>
+
+      <div class="progress-block">
+        <div class="progress-label">
+          <span>Epoch <span id="epoch-num" class="mono">0</span> progress</span>
+          <span id="epoch-pct" class="mono">0%</span>
+        </div>
+        <div class="progress-track"><div id="epoch-fill" class="progress-fill"></div></div>
+      </div>
+
+      <h2 class="panel-subhead">This device</h2>
+      <dl class="stat-row">
+        <dt>Status</dt>
+        <dd><span id="device-status" class="mono">idle</span></dd>
+      </dl>
+      <dl class="stat-row">
+        <dt>Current work unit</dt>
+        <dd><span id="device-unit" class="mono">&mdash;</span></dd>
+      </dl>
+      <dl class="stat-row">
+        <dt>Units you&rsquo;ve completed</dt>
+        <dd><span id="device-completed" class="mono">0</span></dd>
+      </dl>
+
+      <div class="progress-block">
+        <div class="progress-label">
+          <span>Current unit</span>
+          <span id="unit-pct" class="mono">0%</span>
+        </div>
+        <div class="progress-track"><div id="unit-fill" class="progress-fill fill-mine"></div></div>
+      </div>
+
+      <button id="run-btn" class="primary-btn">Start contributing</button>
+      <p class="fine-print">Runs a lightweight simulation in a background thread. Pause anytime &mdash; nothing installs, nothing leaves your browser except the small result you submit.</p>
+    </section>
+  </main>
+
+  <dialog id="about-dialog">
+    <h2>What&rsquo;s actually happening here</h2>
+    <p>This page is running a <strong>simplified, coarse-grained (C&#945;-only)</strong> conformational search on <strong>amyloid-beta (1&ndash;42)</strong>, the peptide (PDB entry <a href="https://www.rcsb.org/structure/1IYT" target="_blank" rel="noopener">1IYT</a>) whose aggregation is central to the amyloid hypothesis of Alzheimer&rsquo;s disease.</p>
+    <p>Every visitor's device is handed a small "work unit" &mdash; a short stretch of the backbone &mdash; and runs a short simulated-annealing search on it in a Web Worker. Results are sent to a Netlify Function, independently re-scored on the server, and merged into one shared structure (stored as JSON in this project's GitHub repo) only when they genuinely lower the total energy.</p>
+    <p><strong>Please calibrate your expectations:</strong> this is an educational / citizen-science-style demo of distributed computing and coarse-grained energy minimization &mdash; built for learning and engagement, not a production molecular-dynamics engine like Folding@home, and not a substitute for tools like AlphaFold or Rosetta. It won't produce new, publishable Alzheimer's science on its own, but it's a genuine, functioning distributed system you can watch work in real time.</p>
+    <button id="about-close" class="primary-btn">Got it</button>
+  </dialog>
+
+  <script src="js/geometry.js"></script>
+  <script src="js/energy.js"></script>
+  <script type="module" src="js/viewer.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

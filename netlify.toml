@@ -1,0 +1,28 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/status"
+  to = "/.netlify/functions/get-status"
+  status = 200
+
+[[redirects]]
+  from = "/api/claim"
+  to = "/.netlify/functions/claim-workunit"
+  status = 200
+
+[[redirects]]
+  from = "/api/submit"
+  to = "/.netlify/functions/submit-result"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

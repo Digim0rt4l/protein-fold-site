@@ -1,0 +1,12 @@
+{
+  "name": "protein-fold-webapp",
+  "version": "1.0.0",
+  "description": "Distributed, browser-based conformational search for amyloid-beta (1-42), coordinated via GitHub + Netlify Functions.",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "netlify dev"
+  }
+}
