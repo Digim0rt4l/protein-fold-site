@@ -40,15 +40,17 @@
   <main class="stage">
     <div id="viewer" class="viewer" role="img" aria-label="3D rendering of the amyloid-beta 42 peptide backbone"></div>
 
-    <button id="show-stats-btn" class="show-stats-btn" type="button" hidden>Show stats</button>
+    <div class="bottom-controls">
+      <button id="show-stats-btn" class="show-stats-btn" type="button" hidden>Show stats</button>
 
-    <div class="view-toggle" role="group" aria-label="Choose which structure to view">
-      <button class="toggle-option active" data-view="global" id="toggle-global" type="button">
-        <span class="dot dot-global"></span> Global best
-      </button>
-      <button class="toggle-option" data-view="mine" id="toggle-mine" type="button">
-        <span class="dot dot-mine"></span> My work unit
-      </button>
+      <div class="view-toggle" role="group" aria-label="Choose which structure to view">
+        <button class="toggle-option active" data-view="global" id="toggle-global" type="button">
+          <span class="dot dot-global"></span> Global best
+        </button>
+        <button class="toggle-option" data-view="mine" id="toggle-mine" type="button">
+          <span class="dot dot-mine"></span> My work unit
+        </button>
+      </div>
     </div>
 
     <section class="panel stats-panel" id="stats-panel" aria-label="Live statistics">
