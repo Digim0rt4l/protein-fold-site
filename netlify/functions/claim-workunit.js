@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const { updateJsonFile } = require("./_github");
 const { STATE_PATH, CLAIM_TTL_MS, expireOldClaims } = require("./_state");
 
@@ -19,7 +20,7 @@ exports.handler = async function (event) {
   }
 
   try {
-    let chosenUnit = null;
+    const trajectoryId = crypto.randomUUID();
     let snapshot = null;
 
     await updateJsonFile(
@@ -27,9 +28,7 @@ exports.handler = async function (event) {
       (data) => {
         const state = data || require("./_state").freshState();
         expireOldClaims(state);
-        const claimedIds = new Set(Object.keys(state.claims));
-        chosenUnit = state.units.find((unit) => !claimedIds.has(unit.id)) || state.units[0];
-        state.claims[chosenUnit.id] = {
+        state.claims[trajectoryId] = {
           clientId,
           claimedAt: new Date().toISOString(),
           expiresAt: new Date(Date.now() + CLAIM_TTL_MS).toISOString()
@@ -44,9 +43,8 @@ exports.handler = async function (event) {
       statusCode: 200,
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
       body: JSON.stringify({
-        unit: chosenUnit,
-        coords: snapshot.coords,
-        energy: snapshot.energy,
+        trajectoryId,
+        phiPsi: snapshot.phiPsi,
         protein: snapshot.protein,
         leaseMs: CLAIM_TTL_MS
       })

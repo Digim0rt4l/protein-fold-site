@@ -1,5 +1,6 @@
 const { updateJsonFile } = require("./_github");
-const { STATE_PATH, expireOldClaims } = require("./_state");
+const { STATE_PATH, ENSEMBLE_SIZE, expireOldClaims } = require("./_state");
+const geometry = require("../../js/geometry.js");
 const energy = require("../../js/energy.js");
 
 exports.handler = async function (event) {
@@ -14,9 +15,9 @@ exports.handler = async function (event) {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
   }
 
-  const { clientId, unitId, coords } = body;
-  if (!clientId || !unitId || !Array.isArray(coords)) {
-    return { statusCode: 400, body: JSON.stringify({ error: "clientId, unitId and coords are required" }) };
+  const { clientId, trajectoryId, phiPsi } = body;
+  if (!clientId || !trajectoryId || !Array.isArray(phiPsi)) {
+    return { statusCode: 400, body: JSON.stringify({ error: "clientId, trajectoryId and phiPsi are required" }) };
   }
 
   try {
@@ -29,16 +30,22 @@ exports.handler = async function (event) {
         const state = data || require("./_state").freshState();
         expireOldClaims(state);
 
-        if (coords.length === state.protein.residueCount) {
-          const candidateEnergy = energy.totalEnergy(coords, state.protein.helices);
+        if (phiPsi.length === state.protein.residueCount) {
+          const residues = geometry.buildBackbone(state.protein.residueCount, phiPsi);
+          const candidateEnergy = energy.totalEnergy(residues, phiPsi, state.protein.helices);
+
+          state.ensemble.push({ phiPsi, energy: candidateEnergy, submittedAt: new Date().toISOString() });
+          state.ensemble.sort((a, b) => a.energy - b.energy);
+          state.ensemble = state.ensemble.slice(0, ENSEMBLE_SIZE);
+
           if (candidateEnergy < state.energy) {
-            state.coords = coords;
+            state.phiPsi = phiPsi;
             state.energy = candidateEnergy;
             accepted = true;
           }
         }
 
-        delete state.claims[unitId];
+        delete state.claims[trajectoryId];
         state.stats.totalCompleted += 1;
         if (accepted) state.stats.totalAccepted += 1;
         state.stats.contributors[clientId] = (state.stats.contributors[clientId] || 0) + 1;
@@ -47,7 +54,7 @@ exports.handler = async function (event) {
         resultState = state;
         return state;
       },
-      `submit ${unitId} from ${clientId}`
+      `submit ${trajectoryId} from ${clientId}`
     );
 
     return {
@@ -56,7 +63,8 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         accepted,
         energy: resultState.energy,
-        coords: resultState.coords,
+        phiPsi: resultState.phiPsi,
+        ensembleSize: resultState.ensemble.length,
         stats: resultState.stats
       })
     };

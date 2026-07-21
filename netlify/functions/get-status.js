@@ -9,10 +9,10 @@ exports.handler = async function (event) {
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
       body: JSON.stringify({
         protein: data.protein,
-        coords: data.coords,
+        phiPsi: data.phiPsi,
         energy: data.energy,
         initialEnergy: data.initialEnergy,
-        units: data.units,
+        ensembleSize: data.ensemble.length,
         claims: data.claims,
         stats: data.stats
       })
