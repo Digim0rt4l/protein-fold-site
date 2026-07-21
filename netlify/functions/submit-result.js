@@ -6,12 +6,14 @@ exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Use POST" };
   }
+
   let body;
   try {
     body = JSON.parse(event.body || "{}");
-  } catch (e) {
+  } catch (error) {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
   }
+
   const { clientId, unitId, coords } = body;
   if (!clientId || !unitId || !Array.isArray(coords)) {
     return { statusCode: 400, body: JSON.stringify({ error: "clientId, unitId and coords are required" }) };
@@ -58,7 +60,7 @@ exports.handler = async function (event) {
         stats: resultState.stats
       })
     };
-  } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: String(err.message || err) }) };
+  } catch (error) {
+    return { statusCode: 500, body: JSON.stringify({ error: String(error.message || error) }) };
   }
 };

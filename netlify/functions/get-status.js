@@ -17,7 +17,7 @@ exports.handler = async function (event) {
         stats: data.stats
       })
     };
-  } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: String(err.message || err) }) };
+  } catch (error) {
+    return { statusCode: 500, body: JSON.stringify({ error: String(error.message || error) }) };
   }
 };

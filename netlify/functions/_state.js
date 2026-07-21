@@ -4,18 +4,18 @@ const energy = require("../../js/energy.js");
 const protein = require("../../data/protein.json");
 
 const STATE_PATH = "data/state.json";
-const UNIT_WIDTH = 10;
-const UNIT_STRIDE = 5;
-const CLAIM_TTL_MS = 2 * 60 * 1000; // 2 minutes
+const UNIT_WIDTH = 16;
+const UNIT_STRIDE = 8;
+const CLAIM_TTL_MS = 40 * 60 * 1000;
 
 function buildUnits(residueCount) {
   const units = [];
   let start = 1;
-  let idx = 0;
+  let index = 0;
   while (start <= residueCount) {
     const end = Math.min(start + UNIT_WIDTH - 1, residueCount);
-    units.push({ id: `u${idx}`, start, end });
-    idx++;
+    units.push({ id: `u${index}`, start, end });
+    index++;
     if (end === residueCount) break;
     start += UNIT_STRIDE;
   }
@@ -24,7 +24,7 @@ function buildUnits(residueCount) {
 
 function freshState() {
   const coords = geometry.buildInitialCoordinates(protein.residueCount, protein.helices);
-  const e = energy.totalEnergy(coords, protein.helices);
+  const initialEnergy = energy.totalEnergy(coords, protein.helices);
   return {
     protein: {
       pdbId: protein.pdbId,
@@ -34,8 +34,8 @@ function freshState() {
       residueCount: protein.residueCount
     },
     coords,
-    energy: e,
-    initialEnergy: e,
+    energy: initialEnergy,
+    initialEnergy,
     units: buildUnits(protein.residueCount),
     claims: {},
     stats: {
@@ -48,9 +48,6 @@ function freshState() {
   };
 }
 
-// Returns { data, sha } -- data is never null; a fresh state is synthesized
-// (but NOT saved) if the file doesn't exist yet. The first write (from
-// claim or submit) will create it via updateJsonFile's normal sha=null path.
 async function loadState() {
   const { data, sha } = await getJsonFile(STATE_PATH);
   if (data) return { data, sha };
