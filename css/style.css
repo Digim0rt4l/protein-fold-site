@@ -164,6 +164,8 @@ body {
   height: 7px;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
 }
 
 .dot-global {
