@@ -48,12 +48,12 @@
           <span class="dot dot-global"></span> Global best
         </button>
         <button class="toggle-option" data-view="mine" id="toggle-mine" type="button">
-          <span class="dot dot-mine"></span> My work unit
+          <span class="dot dot-mine"></span> My trajectory
         </button>
       </div>
     </div>
 
-    <section class="panel stats-panel" id="stats-panel" aria-label="Live statistics">
+    <section class="panel" id="stats-panel" aria-label="Live statistics">
       <button id="hide-stats-btn" class="hide-stats-btn" type="button" aria-label="Hide stats">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
           <line x1="4" y1="4" x2="20" y2="20" />
@@ -70,7 +70,7 @@
         <dd><span id="stat-improvement" class="mono">&mdash;</span></dd>
       </dl>
       <dl class="stat-row">
-        <dt>Work units completed</dt>
+        <dt>Trajectories completed</dt>
         <dd><span id="stat-completed" class="mono">0</span></dd>
       </dl>
       <dl class="stat-row">
@@ -78,8 +78,8 @@
         <dd><span id="stat-contributors" class="mono">0</span></dd>
       </dl>
       <dl class="stat-row">
-        <dt>Units claimed right now</dt>
-        <dd><span id="stat-claimed" class="mono">0 / 0</span></dd>
+        <dt>Trajectories running now</dt>
+        <dd><span id="stat-claimed" class="mono">0</span></dd>
       </dl>
 
       <div class="progress-block">
@@ -96,31 +96,33 @@
         <dd><span id="device-status" class="mono">idle</span></dd>
       </dl>
       <dl class="stat-row">
-        <dt>Current work unit</dt>
+        <dt>Current trajectory</dt>
         <dd><span id="device-unit" class="mono">&mdash;</span></dd>
       </dl>
       <dl class="stat-row">
-        <dt>Units you&rsquo;ve completed</dt>
+        <dt>Trajectories you&rsquo;ve completed</dt>
         <dd><span id="device-completed" class="mono">0</span></dd>
       </dl>
 
       <div class="progress-block">
         <div class="progress-label">
-          <span>Current unit</span>
+          <span>Current trajectory</span>
           <span id="unit-pct" class="mono">0%</span>
         </div>
         <div class="progress-track"><div id="unit-fill" class="progress-fill fill-mine"></div></div>
       </div>
 
       <button id="run-btn" class="primary-btn" type="button">Start contributing</button>
-      <p class="fine-print">Each work unit runs for a long stretch on purpose, so your device stays useful without hammering the shared server. Pause anytime.</p>
+      <p class="fine-print">Each trajectory runs for a long stretch on purpose, so your device stays useful without hammering the shared server. Pause anytime.</p>
     </section>
   </main>
 
   <dialog id="about-dialog">
-    <p>This page is running a simplified, coarse-grained conformational search on amyloid-beta 1-42, the peptide known as PDB entry 1IYT, whose aggregation is central to the amyloid hypothesis of Alzheimer's disease.</p>
-    <p>Every visitor's device is handed a small work unit, a stretch of the backbone, and runs a long simulated-annealing search on it in a background thread. Results are sent to a server function, independently re-scored, and merged into one shared structure stored in this project's GitHub repository, only when they genuinely lower the total energy.</p>
-    <p>Please calibrate your expectations. This is an educational, citizen-science-style demo of distributed computing and coarse-grained energy minimization, built for learning and engagement. It is not a production molecular-dynamics engine like Folding at home, and it is not a substitute for tools like AlphaFold or Rosetta. It will not produce new, publishable Alzheimer's science on its own, but it is a genuine, functioning distributed system you can watch work in real time.</p>
+    <p>This page is running a distributed conformational search on amyloid-beta 1-42, the peptide known as PDB entry 1IYT, whose aggregation is central to the amyloid hypothesis of Alzheimer's disease.</p>
+    <p>Each visitor's device builds a real backbone, one nitrogen, carbon-alpha, and carbon atom per amino acid, connected using the same standard bond lengths and bond angles used in real structural biology software. The shape of that backbone is controlled entirely by its phi and psi torsion angles, the same internal coordinates real protein modeling tools use, rather than by moving atoms around directly. The very first trajectory ever run started from a randomized, extended, unfolded chain, not from the known helical answer, and every trajectory since has built on the best result any device has found so far.</p>
+    <p>Each device runs its own independent trajectory, repeatedly rotating a single torsion angle and keeping the change only when it lowers a scoring function that penalizes atoms crashing into each other and rewards torsion angles that sit near the alpha helix basin in the regions of the chain already known to form a helix. This is a real, working local search over torsion space, not a pre-scripted animation.</p>
+    <p>Results are sent to a server function, independently re-scored from scratch so no device is simply trusted, and kept as part of a small ensemble of independent results. The single best result found so far across every trajectory is shown as the global structure.</p>
+    <p>Please calibrate your expectations. The scoring function is a simplified stand-in for a real molecular force field, there are no side chains, no solvent, and no validated physics beyond bond geometry and a basic steric and torsional model. This is not a production molecular dynamics engine like Folding at home, and it is not a substitute for tools like AlphaFold or Rosetta. It will not produce new, publishable Alzheimer's science on its own, but it is a genuine, functioning distributed optimization system you can watch work in real time.</p>
     <button id="about-close" class="primary-btn" type="button">Got it</button>
   </dialog>
 
