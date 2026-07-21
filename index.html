@@ -3,12 +3,20 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Aβ42 Fold &mdash; distributed conformational search</title>
+<title>Aβ42 Fold — distributed conformational search</title>
 <meta name="description" content="Contribute idle device compute to a distributed, browser-based conformational search of the Alzheimer's-linked amyloid-beta (1-42) peptide." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -22,23 +30,25 @@
         <p>distributed conformational search &middot; PDB 1IYT &middot; Alzheimer&rsquo;s research</p>
       </div>
     </div>
-    <button id="about-btn" class="ghost-btn" aria-haspopup="dialog">What is this?</button>
+    <button id="about-btn" class="ghost-btn" type="button" aria-haspopup="dialog">What is this?</button>
   </header>
 
   <main class="stage">
     <div id="viewer" class="viewer" role="img" aria-label="3D rendering of the amyloid-beta 42 peptide backbone"></div>
 
+    <button id="show-stats-btn" class="show-stats-btn" type="button" hidden>Show stats</button>
+
     <div class="view-toggle" role="group" aria-label="Choose which structure to view">
-      <button class="toggle-option active" data-view="global" id="toggle-global">
+      <button class="toggle-option active" data-view="global" id="toggle-global" type="button">
         <span class="dot dot-global"></span> Global best
       </button>
-      <span class="toggle-slider" id="toggle-slider" aria-hidden="true"></span>
-      <button class="toggle-option" data-view="mine" id="toggle-mine">
+      <button class="toggle-option" data-view="mine" id="toggle-mine" type="button">
         <span class="dot dot-mine"></span> My work unit
       </button>
     </div>
 
-    <section class="panel stats-panel" aria-label="Live statistics">
+    <section class="panel stats-panel" id="stats-panel" aria-label="Live statistics">
+      <button id="hide-stats-btn" class="hide-stats-btn" type="button" aria-label="Hide stats">&times;</button>
       <h2>Network</h2>
       <dl class="stat-row">
         <dt>Current best energy</dt>
@@ -91,17 +101,16 @@
         <div class="progress-track"><div id="unit-fill" class="progress-fill fill-mine"></div></div>
       </div>
 
-      <button id="run-btn" class="primary-btn">Start contributing</button>
-      <p class="fine-print">Runs a lightweight simulation in a background thread. Pause anytime &mdash; nothing installs, nothing leaves your browser except the small result you submit.</p>
+      <button id="run-btn" class="primary-btn" type="button">Start contributing</button>
+      <p class="fine-print">Each work unit runs for a long stretch on purpose, so your device stays useful without hammering the shared server. Pause anytime.</p>
     </section>
   </main>
 
   <dialog id="about-dialog">
-    <h2>What&rsquo;s actually happening here</h2>
-    <p>This page is running a <strong>simplified, coarse-grained (C&#945;-only)</strong> conformational search on <strong>amyloid-beta (1&ndash;42)</strong>, the peptide (PDB entry <a href="https://www.rcsb.org/structure/1IYT" target="_blank" rel="noopener">1IYT</a>) whose aggregation is central to the amyloid hypothesis of Alzheimer&rsquo;s disease.</p>
-    <p>Every visitor's device is handed a small "work unit" &mdash; a short stretch of the backbone &mdash; and runs a short simulated-annealing search on it in a Web Worker. Results are sent to a Netlify Function, independently re-scored on the server, and merged into one shared structure (stored as JSON in this project's GitHub repo) only when they genuinely lower the total energy.</p>
-    <p><strong>Please calibrate your expectations:</strong> this is an educational / citizen-science-style demo of distributed computing and coarse-grained energy minimization &mdash; built for learning and engagement, not a production molecular-dynamics engine like Folding@home, and not a substitute for tools like AlphaFold or Rosetta. It won't produce new, publishable Alzheimer's science on its own, but it's a genuine, functioning distributed system you can watch work in real time.</p>
-    <button id="about-close" class="primary-btn">Got it</button>
+    <p>This page is running a simplified, coarse-grained conformational search on amyloid-beta 1-42, the peptide known as PDB entry 1IYT, whose aggregation is central to the amyloid hypothesis of Alzheimer's disease.</p>
+    <p>Every visitor's device is handed a small work unit, a stretch of the backbone, and runs a long simulated-annealing search on it in a background thread. Results are sent to a server function, independently re-scored, and merged into one shared structure stored in this project's GitHub repository, only when they genuinely lower the total energy.</p>
+    <p>Please calibrate your expectations. This is an educational, citizen-science-style demo of distributed computing and coarse-grained energy minimization, built for learning and engagement. It is not a production molecular-dynamics engine like Folding at home, and it is not a substitute for tools like AlphaFold or Rosetta. It will not produce new, publishable Alzheimer's science on its own, but it is a genuine, functioning distributed system you can watch work in real time.</p>
+    <button id="about-close" class="primary-btn" type="button">Got it</button>
   </dialog>
 
   <script src="js/geometry.js"></script>
@@ -110,3 +119,4 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+

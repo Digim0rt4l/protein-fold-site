@@ -135,3 +135,16 @@ contributors working at once, exactly as you asked for.
   stored in `localStorage`.
 - This is a coarse C-alpha model with a simplified energy function; treat the
   3D structure as illustrative, not as new scientific ground truth.
+- Each work unit runs for a fixed time budget (30 minutes by default, set via
+  `TIME_BUDGET_MS` in `js/app.js`) rather than a fixed iteration count, so
+  behavior stays consistent across devices of different speeds. If the
+  browser tab is backgrounded for a long time, mobile operating systems may
+  throttle or suspend the worker; the site will simply resume or retry when
+  it's foregrounded again.
+
+## If you're updating an existing deployment
+If you already had this site running with the old, smaller work units, delete
+`data/state.json` from your data repo (e.g. `protein-fold-data`) after
+deploying this version, so the next request regenerates it with the new,
+larger 16-residue work units. Otherwise the old unit boundaries persist since
+the state file is only created once, the first time it's missing.
