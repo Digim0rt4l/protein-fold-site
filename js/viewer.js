@@ -1,24 +1,35 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const COLOR_HELIX = 0x35d9c0;
 const COLOR_COIL = 0x8993a4;
 const COLOR_ACTIVE = 0xffb454;
+const RADIAL_SEGMENTS = 12;
 
-let scene, camera, renderer, controls, container;
-let group; // holds current ribbon + spheres
+let scene = null;
+let camera = null;
+let renderer = null;
+let controls = null;
+let container = null;
+let group = null;
 let activePulse = { mesh: null, t: 0 };
 
 function init(containerEl) {
   container = containerEl;
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 500);
-  camera.position.set(0, 30, 65);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  container.appendChild(renderer.domElement);
+  try {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 500);
+    camera.position.set(0, 30, 65);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+  } catch (error) {
+    container.innerHTML = "<p class=\"viewer-fallback\">3D rendering isn't supported in this browser.</p>";
+    return;
+  }
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -27,12 +38,14 @@ function init(containerEl) {
   controls.autoRotateSpeed = 0.6;
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.65));
-  const key = new THREE.DirectionalLight(0xffffff, 1.1);
-  key.position.set(30, 50, 40);
-  scene.add(key);
-  const rim = new THREE.DirectionalLight(0x35d9c0, 0.4);
-  rim.position.set(-40, -20, -30);
-  scene.add(rim);
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  keyLight.position.set(30, 50, 40);
+  scene.add(keyLight);
+
+  const rimLight = new THREE.DirectionalLight(0x35d9c0, 0.4);
+  rimLight.position.set(-40, -20, -30);
+  scene.add(rimLight);
 
   group = new THREE.Group();
   scene.add(group);
@@ -42,7 +55,7 @@ function init(containerEl) {
 }
 
 function onResize() {
-  if (!container) return;
+  if (!container || !renderer || !camera) return;
   camera.aspect = container.clientWidth / container.clientHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -51,74 +64,77 @@ function onResize() {
 function clearGroup() {
   while (group.children.length) {
     const obj = group.children.pop();
-    obj.geometry && obj.geometry.dispose();
-    obj.material && obj.material.dispose();
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) obj.material.dispose();
   }
 }
 
 function centerOf(coords) {
-  const c = new THREE.Vector3();
-  coords.forEach((p) => c.add(new THREE.Vector3(p.x, p.y, p.z)));
-  c.divideScalar(coords.length);
-  return c;
+  const center = new THREE.Vector3();
+  coords.forEach((point) => center.add(new THREE.Vector3(point.x, point.y, point.z)));
+  center.divideScalar(coords.length);
+  return center;
 }
 
-// Renders a backbone. `helices` = [{start,end}] (1-indexed, inclusive).
-// `highlightRange` = optional {start,end} (1-indexed) to tint amber, e.g.
-// the work unit currently being optimized.
+function isInHighlightRange(residueNumber, highlightRange) {
+  return Boolean(highlightRange) && residueNumber >= highlightRange.start && residueNumber <= highlightRange.end;
+}
+
+function colorForResidue(residueNumber, helices, highlightRange) {
+  if (isInHighlightRange(residueNumber, highlightRange)) return COLOR_ACTIVE;
+  if (helices.some((helix) => residueNumber >= helix.start && residueNumber <= helix.end)) return COLOR_HELIX;
+  return COLOR_COIL;
+}
+
 function render(coords, helices, highlightRange) {
+  if (!scene || !group) return;
   clearGroup();
   activePulse.mesh = null;
   if (!coords || coords.length < 2) return;
 
-  const vecs = coords.map((p) => new THREE.Vector3(p.x, p.y, p.z));
+  const vectors = coords.map((point) => new THREE.Vector3(point.x, point.y, point.z));
   const center = centerOf(coords);
-  vecs.forEach((v) => v.sub(center));
+  vectors.forEach((vector) => vector.sub(center));
 
-  const curve = new THREE.CatmullRomCurve3(vecs, false, "catmullrom", 0.2);
-  const tubeGeo = new THREE.TubeGeometry(curve, Math.max(200, coords.length * 8), 0.55, 12, false);
+  const curve = new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.2);
+  const tubularSegments = Math.max(200, coords.length * 8);
+  const tubeGeometry = new THREE.TubeGeometry(curve, tubularSegments, 0.55, RADIAL_SEGMENTS, false);
 
-  // Color the tube per-vertex based on nearest residue's secondary structure / highlight.
   const colors = [];
-  const posAttr = tubeGeo.attributes.position;
-  const segCount = tubeGeo.parameters.tubularSegments;
-  for (let i = 0; i <= segCount; i++) {
-    const tFrac = i / segCount;
-    const resIdx = Math.min(coords.length - 1, Math.round(tFrac * (coords.length - 1)));
-    const res1 = resIdx + 1;
-    let hex = COLOR_COIL;
-    if (helices.some((h) => res1 >= h.start && res1 <= h.end)) hex = COLOR_HELIX;
-    if (highlightRange && res1 >= highlightRange.start && res1 <= highlightRange.end) hex = COLOR_ACTIVE;
-    const c = new THREE.Color(hex);
-    for (let r = 0; r < 12 + 1; r++) colors.push(c.r, c.g, c.b);
+  for (let i = 0; i <= tubularSegments; i++) {
+    const fraction = i / tubularSegments;
+    const residueIndex = Math.min(coords.length - 1, Math.round(fraction * (coords.length - 1)));
+    const residueNumber = residueIndex + 1;
+    const color = new THREE.Color(colorForResidue(residueNumber, helices, highlightRange));
+    for (let ring = 0; ring < RADIAL_SEGMENTS + 1; ring++) colors.push(color.r, color.g, color.b);
   }
-  tubeGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  tubeGeometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
-  const tubeMat = new THREE.MeshStandardMaterial({
+  const tubeMaterial = new THREE.MeshStandardMaterial({
     vertexColors: true,
     roughness: 0.35,
     metalness: 0.1,
     emissive: 0x0a0d12,
     emissiveIntensity: 0.15
   });
-  const tube = new THREE.Mesh(tubeGeo, tubeMat);
-  group.add(tube);
+  group.add(new THREE.Mesh(tubeGeometry, tubeMaterial));
 
-  // Small residue markers.
-  const sphereGeo = new THREE.SphereGeometry(0.85, 12, 12);
-  vecs.forEach((v, idx) => {
-    const res1 = idx + 1;
-    let hex = COLOR_COIL;
-    if (helices.some((h) => res1 >= h.start && res1 <= h.end)) hex = COLOR_HELIX;
-    const isHighlighted = highlightRange && res1 >= highlightRange.start && res1 <= highlightRange.end;
-    if (isHighlighted) hex = COLOR_ACTIVE;
-    const mat = new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: isHighlighted ? 0.9 : 0.25 });
-    const sphere = new THREE.Mesh(sphereGeo, mat);
-    sphere.position.copy(v);
+  const sphereGeometry = new THREE.SphereGeometry(0.85, 12, 12);
+  const midpointIndex = highlightRange ? Math.floor((highlightRange.start - 1 + highlightRange.end - 1) / 2) : -1;
+
+  vectors.forEach((vector, index) => {
+    const residueNumber = index + 1;
+    const highlighted = isInHighlightRange(residueNumber, highlightRange);
+    const color = colorForResidue(residueNumber, helices, highlightRange);
+    const material = new THREE.MeshStandardMaterial({
+      color,
+      emissive: color,
+      emissiveIntensity: highlighted ? 0.9 : 0.25
+    });
+    const sphere = new THREE.Mesh(sphereGeometry, material);
+    sphere.position.copy(vector);
     group.add(sphere);
-    if (isHighlighted && idx === Math.floor(((highlightRange.start - 1) + (highlightRange.end - 1)) / 2)) {
-      activePulse.mesh = sphere;
-    }
+    if (highlighted && index === midpointIndex) activePulse.mesh = sphere;
   });
 }
 
@@ -126,11 +142,11 @@ function animate() {
   requestAnimationFrame(animate);
   if (activePulse.mesh) {
     activePulse.t += 0.06;
-    const s = 1 + 0.35 * Math.abs(Math.sin(activePulse.t));
-    activePulse.mesh.scale.setScalar(s);
+    const scale = 1 + 0.35 * Math.abs(Math.sin(activePulse.t));
+    activePulse.mesh.scale.setScalar(scale);
   }
-  controls && controls.update();
-  renderer && renderer.render(scene, camera);
+  if (controls) controls.update();
+  if (renderer && scene && camera) renderer.render(scene, camera);
 }
 
 window.ProteinViewer = { init, render };

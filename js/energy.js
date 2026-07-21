@@ -1,65 +1,66 @@
-/* energy.js
- * A simplified, coarse-grained (C-alpha only) scoring function.
- * This is deliberately lightweight so it can run thousands of times per
- * second in a browser tab or phone -- it is an educational stand-in for
- * a real molecular force field, not a substitute for one.
- *
- * Terms:
- *  - bond:   keeps consecutive C-alpha atoms ~3.8 A apart
- *  - helix:  rewards i->i+3 (~5.0 A) and i->i+4 (~6.2 A) spacing inside
- *            the peptide's real, PDB-annotated helical regions
- *  - clash:  steep penalty for any two non-bonded atoms closer than 4.0 A
- *
- * Lower total energy = better/more plausible conformation.
- */
 (function (root) {
   "use strict";
 
-  function dist(a, b) {
-    var dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+  function distance(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    const dz = a.z - b.z;
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
-  function totalEnergy(coords, helices) {
-    var n = coords.length;
-    var e = 0;
-    var K_BOND = 8.0, IDEAL_BOND = 3.8;
-    var K_HELIX = 1.2, IDEAL_I3 = 5.0, IDEAL_I4 = 6.2;
-    var K_CLASH = 25.0, CLASH_MIN = 4.0;
-
-    for (var i = 0; i < n; i++) {
-      if (i + 1 < n) {
-        var d1 = dist(coords[i], coords[i + 1]);
-        e += K_BOND * (d1 - IDEAL_BOND) * (d1 - IDEAL_BOND);
-      }
-      var inHelixI = inHelixFallback(i + 1, helices);
-
-      if (inHelixI && i + 3 < n) {
-        var d3 = dist(coords[i], coords[i + 3]);
-        e += K_HELIX * (d3 - IDEAL_I3) * (d3 - IDEAL_I3);
-      }
-      if (inHelixI && i + 4 < n) {
-        var d4 = dist(coords[i], coords[i + 4]);
-        e += K_HELIX * (d4 - IDEAL_I4) * (d4 - IDEAL_I4);
-      }
-      for (var j = i + 3; j < n; j++) {
-        var dnb = dist(coords[i], coords[j]);
-        if (dnb < CLASH_MIN) {
-          e += K_CLASH * (CLASH_MIN - dnb) * (CLASH_MIN - dnb);
-        }
-      }
-    }
-    return e;
-  }
-
-  function inHelixFallback(res1, helices) {
-    for (var k = 0; k < helices.length; k++) {
-      if (res1 >= helices[k].start && res1 <= helices[k].end) return true;
+  function residueInHelix(residueNumber, helices) {
+    for (let i = 0; i < helices.length; i++) {
+      if (residueNumber >= helices[i].start && residueNumber <= helices[i].end) return true;
     }
     return false;
   }
 
-  var api = { totalEnergy: totalEnergy, dist: dist };
+  function totalEnergy(coords, helices) {
+    const n = coords.length;
+    let energy = 0;
+
+    const bondStrength = 8.0;
+    const idealBondLength = 3.8;
+    const helixStrength = 1.2;
+    const idealSpacingI3 = 5.0;
+    const idealSpacingI4 = 6.2;
+    const clashStrength = 25.0;
+    const clashMinDistance = 4.0;
+
+    for (let i = 0; i < n; i++) {
+      if (i + 1 < n) {
+        const bondDistance = distance(coords[i], coords[i + 1]);
+        const bondDelta = bondDistance - idealBondLength;
+        energy += bondStrength * bondDelta * bondDelta;
+      }
+
+      const inHelix = residueInHelix(i + 1, helices);
+
+      if (inHelix && i + 3 < n) {
+        const spacingI3 = distance(coords[i], coords[i + 3]);
+        const deltaI3 = spacingI3 - idealSpacingI3;
+        energy += helixStrength * deltaI3 * deltaI3;
+      }
+
+      if (inHelix && i + 4 < n) {
+        const spacingI4 = distance(coords[i], coords[i + 4]);
+        const deltaI4 = spacingI4 - idealSpacingI4;
+        energy += helixStrength * deltaI4 * deltaI4;
+      }
+
+      for (let j = i + 3; j < n; j++) {
+        const nonBondedDistance = distance(coords[i], coords[j]);
+        if (nonBondedDistance < clashMinDistance) {
+          const clashDelta = clashMinDistance - nonBondedDistance;
+          energy += clashStrength * clashDelta * clashDelta;
+        }
+      }
+    }
+
+    return energy;
+  }
+
+  const api = { totalEnergy, distance };
 
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
