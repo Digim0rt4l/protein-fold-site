@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Aβ42 Fold — distributed conformational search</title>
-<meta name="description" content="Contribute idle device compute to a distributed, browser-based conformational search of the Alzheimer's-linked amyloid-beta (1-42) peptide." />
+<title>Protein Fold Site</title>
+<meta name="description" content="Protein Fold Site — contribute idle device compute to a distributed, browser-based conformational search of the Alzheimer's-linked amyloid-beta (1-42) peptide." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,9 +24,19 @@
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">Aβ</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 32" width="22" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="4" y1="0" x2="20" y2="0" stroke="#ffb454" stroke-width="1.6" stroke-linecap="round" />
+          <line x1="4" y1="8" x2="20" y2="8" stroke="#ffb454" stroke-width="1.6" stroke-linecap="round" />
+          <line x1="4" y1="16" x2="20" y2="16" stroke="#ffb454" stroke-width="1.6" stroke-linecap="round" />
+          <line x1="4" y1="24" x2="20" y2="24" stroke="#ffb454" stroke-width="1.6" stroke-linecap="round" />
+          <line x1="4" y1="32" x2="20" y2="32" stroke="#ffb454" stroke-width="1.6" stroke-linecap="round" />
+          <path d="M4 0 C4 4 20 4 20 8 C20 12 4 12 4 16 C4 20 20 20 20 24 C20 28 4 28 4 32" stroke="#35d9c0" stroke-width="2.4" stroke-linecap="round" />
+          <path d="M20 0 C20 4 4 4 4 8 C4 12 20 12 20 16 C20 20 4 20 4 24 C4 28 20 28 20 32" stroke="#a78bfa" stroke-width="2.4" stroke-linecap="round" />
+        </svg>
+      </span>
       <div class="brand-text">
-        <h1>Aβ42 Fold</h1>
+        <h1>Protein Fold Site</h1>
         <p>distributed conformational search &middot; PDB 1IYT &middot; Alzheimer&rsquo;s research</p>
       </div>
     </div>
@@ -48,7 +58,12 @@
     </div>
 
     <section class="panel stats-panel" id="stats-panel" aria-label="Live statistics">
-      <button id="hide-stats-btn" class="hide-stats-btn" type="button" aria-label="Hide stats">&times;</button>
+      <button id="hide-stats-btn" class="hide-stats-btn" type="button" aria-label="Hide stats">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <line x1="4" y1="4" x2="20" y2="20" />
+          <line x1="20" y1="4" x2="4" y2="20" />
+        </svg>
+      </button>
       <h2>Network</h2>
       <dl class="stat-row">
         <dt>Current best energy</dt>
