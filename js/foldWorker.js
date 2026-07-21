@@ -2,58 +2,34 @@ importScripts("geometry.js", "energy.js");
 
 let running = false;
 
-function cloneCoords(coords) {
-  return coords.map((point) => ({ x: point.x, y: point.y, z: point.z }));
+function cloneDihedrals(dihedrals) {
+  return dihedrals.map((d) => ({ phi: d.phi, psi: d.psi }));
 }
 
-function relaxBonds(coords, lo, hi, passes) {
-  const idealBondLength = 3.8;
-  for (let pass = 0; pass < passes; pass++) {
-    for (let i = Math.max(0, lo - 1); i < Math.min(coords.length - 1, hi + 1); i++) {
-      const a = coords[i];
-      const b = coords[i + 1];
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const dz = b.z - a.z;
-      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.0001;
-      const diff = (distance - idealBondLength) / distance;
-      const aFixed = i < lo;
-      const bFixed = i + 1 > hi;
-      if (aFixed && bFixed) continue;
-      let moveA = 0.5;
-      let moveB = 0.5;
-      if (aFixed && !bFixed) {
-        moveA = 0;
-        moveB = 1;
-      }
-      if (bFixed && !aFixed) {
-        moveA = 1;
-        moveB = 0;
-      }
-      a.x += diff * dx * moveA;
-      a.y += diff * dy * moveA;
-      a.z += diff * dz * moveA;
-      b.x -= diff * dx * moveB;
-      b.y -= diff * dy * moveB;
-      b.z -= diff * dz * moveB;
-    }
+function buildMovableDegreesOfFreedom(residueCount) {
+  const degreesOfFreedom = [];
+  for (let i = 0; i < residueCount; i++) {
+    if (i > 0) degreesOfFreedom.push({ index: i, key: "phi" });
+    if (i < residueCount - 1) degreesOfFreedom.push({ index: i, key: "psi" });
   }
+  return degreesOfFreedom;
 }
 
 function runAnnealing(job) {
-  const { coords: startCoords, helices, unit, timeBudgetMs } = job;
-  const coords = cloneCoords(startCoords);
-  let bestCoords = cloneCoords(startCoords);
-  let energy = self.ProteinEnergy.totalEnergy(coords, helices);
+  const { dihedrals: startDihedrals, helices, residueCount, timeBudgetMs } = job;
+  const dihedrals = cloneDihedrals(startDihedrals);
+  let residues = self.ProteinGeometry.buildBackbone(residueCount, dihedrals);
+  let energy = self.ProteinEnergy.totalEnergy(residues, dihedrals, helices);
+
+  let bestDihedrals = cloneDihedrals(dihedrals);
   let bestEnergy = energy;
 
-  const lo = unit.start - 1;
-  const hi = unit.end - 1;
-  const startTemp = 6.0;
-  const endTemp = 0.05;
+  const degreesOfFreedom = buildMovableDegreesOfFreedom(residueCount);
+  const startTemp = 3.0;
+  const endTemp = 0.02;
   const startTime = Date.now();
   let lastPostTime = startTime;
-  let activeResidue = unit.start;
+  let activeResidue = 1;
 
   while (running) {
     const elapsedMs = Date.now() - startTime;
@@ -62,30 +38,28 @@ function runAnnealing(job) {
     const progress = elapsedMs / timeBudgetMs;
     const temperature = startTemp * Math.pow(endTemp / startTemp, progress);
 
-    const idx = lo + Math.floor(Math.random() * (hi - lo + 1));
-    activeResidue = idx + 1;
-    const previous = { x: coords[idx].x, y: coords[idx].y, z: coords[idx].z };
+    const move = degreesOfFreedom[Math.floor(Math.random() * degreesOfFreedom.length)];
+    activeResidue = move.index + 1;
+    const previousValue = dihedrals[move.index][move.key];
 
-    const scale = 1.2 * (temperature / startTemp) + 0.15;
-    coords[idx].x += (Math.random() - 0.5) * scale;
-    coords[idx].y += (Math.random() - 0.5) * scale;
-    coords[idx].z += (Math.random() - 0.5) * scale;
+    const maxStepDeg = 45 * (temperature / startTemp) + 2;
+    const proposedValue = previousValue + (Math.random() - 0.5) * 2 * maxStepDeg;
+    dihedrals[move.index][move.key] = proposedValue;
 
-    relaxBonds(coords, lo, hi, 6);
-
-    const newEnergy = self.ProteinEnergy.totalEnergy(coords, helices);
-    const delta = newEnergy - energy;
+    const candidateResidues = self.ProteinGeometry.buildBackbone(residueCount, dihedrals);
+    const candidateEnergy = self.ProteinEnergy.totalEnergy(candidateResidues, dihedrals, helices);
+    const delta = candidateEnergy - energy;
     const accept = delta < 0 || Math.random() < Math.exp(-delta / temperature);
 
     if (accept) {
-      energy = newEnergy;
+      energy = candidateEnergy;
+      residues = candidateResidues;
       if (energy < bestEnergy) {
         bestEnergy = energy;
-        bestCoords = cloneCoords(coords);
+        bestDihedrals = cloneDihedrals(dihedrals);
       }
     } else {
-      coords[idx] = previous;
-      relaxBonds(coords, lo, hi, 6);
+      dihedrals[move.index][move.key] = previousValue;
     }
 
     const now = Date.now();
@@ -97,13 +71,13 @@ function runAnnealing(job) {
         timeBudgetMs,
         energy,
         bestEnergy,
-        coords: cloneCoords(coords),
+        caTrace: self.ProteinGeometry.caTrace(residues),
         activeResidue
       });
     }
   }
 
-  self.postMessage({ type: "done", coords: bestCoords, energy: bestEnergy });
+  self.postMessage({ type: "done", dihedrals: bestDihedrals, energy: bestEnergy });
 }
 
 self.onmessage = (event) => {

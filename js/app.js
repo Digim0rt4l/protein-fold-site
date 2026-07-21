@@ -46,17 +46,22 @@ let contributing = false;
 let worker = null;
 
 function formatEnergy(value) {
-  return value == null ? "\u2014" : value.toFixed(1);
+  return value == null ? "\u2014" : value.toFixed(2);
+}
+
+function caTraceFromPhiPsi(phiPsi) {
+  const residues = window.ProteinGeometry.buildBackbone(phiPsi.length, phiPsi);
+  return window.ProteinGeometry.caTrace(residues);
 }
 
 function renderCurrentView() {
   if (!window.ProteinViewer) return;
   if (currentView === "global" && latestGlobal) {
-    window.ProteinViewer.render(latestGlobal.coords, latestGlobal.helices, null);
+    window.ProteinViewer.render(latestGlobal.caTrace, latestGlobal.helices, null);
   } else if (currentView === "mine" && latestMine) {
-    window.ProteinViewer.render(latestMine.coords, latestMine.helices, latestMine.highlightRange);
+    window.ProteinViewer.render(latestMine.caTrace, latestMine.helices, latestMine.activeResidue);
   } else if (latestGlobal) {
-    window.ProteinViewer.render(latestGlobal.coords, latestGlobal.helices, null);
+    window.ProteinViewer.render(latestGlobal.caTrace, latestGlobal.helices, null);
   }
 }
 
@@ -75,11 +80,10 @@ function setStatsVisible(visible) {
 function updateGlobalStatsUI(data) {
   els.energy.textContent = formatEnergy(data.energy);
   const improvement = data.initialEnergy - data.energy;
-  els.improvement.textContent = (improvement >= 0 ? "-" : "+") + Math.abs(improvement).toFixed(1);
+  els.improvement.textContent = (improvement >= 0 ? "-" : "+") + Math.abs(improvement).toFixed(2);
   els.completed.textContent = data.stats.totalCompleted;
   els.contributors.textContent = Object.keys(data.stats.contributors || {}).length;
-  const claimedCount = Object.keys(data.claims || {}).length;
-  els.claimed.textContent = `${claimedCount} / ${data.units.length}`;
+  els.claimed.textContent = String(Object.keys(data.claims || {}).length);
 
   const epoch = Math.floor(data.stats.totalCompleted / EPOCH_SIZE);
   const percent = Math.round(((data.stats.totalCompleted % EPOCH_SIZE) / EPOCH_SIZE) * 100);
@@ -93,11 +97,10 @@ async function fetchStatus() {
   if (!response.ok) throw new Error("status fetch failed");
   const data = await response.json();
   latestGlobal = {
-    coords: data.coords,
+    caTrace: caTraceFromPhiPsi(data.phiPsi),
     helices: data.protein.helices,
     initialEnergy: data.initialEnergy,
     energy: data.energy,
-    units: data.units,
     claims: data.claims,
     stats: data.stats
   };
@@ -111,7 +114,7 @@ function startPolling() {
   setInterval(() => fetchStatus().catch(() => {}), STATUS_POLL_MS);
 }
 
-async function claimUnit() {
+async function claimTrajectory() {
   const response = await fetch("/api/claim", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -121,11 +124,11 @@ async function claimUnit() {
   return response.json();
 }
 
-async function submitResult(unitId, coords) {
+async function submitResult(trajectoryId, phiPsi) {
   const response = await fetch("/api/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ clientId, unitId, coords })
+    body: JSON.stringify({ clientId, trajectoryId, phiPsi })
   });
   if (!response.ok) throw new Error("submit failed");
   return response.json();
@@ -139,12 +142,13 @@ function ensureWorker() {
 async function contributionLoop() {
   while (contributing) {
     try {
-      els.deviceStatus.textContent = "requesting work unit\u2026";
-      const claim = await claimUnit();
-      els.deviceUnit.textContent = `${claim.unit.id} (res ${claim.unit.start}\u2013${claim.unit.end})`;
+      els.deviceStatus.textContent = "requesting a trajectory\u2026";
+      const claim = await claimTrajectory();
+      els.deviceUnit.textContent = claim.trajectoryId.slice(0, 8);
       els.deviceStatus.textContent = "optimizing";
 
       const helices = claim.protein.helices;
+      const residueCount = claim.protein.residueCount;
       const activeWorker = ensureWorker();
 
       const result = await new Promise((resolve, reject) => {
@@ -155,9 +159,9 @@ async function contributionLoop() {
             els.unitPct.textContent = percent + "%";
             els.unitFill.style.width = percent + "%";
             latestMine = {
-              coords: message.coords,
+              caTrace: message.caTrace,
               helices,
-              highlightRange: { start: claim.unit.start, end: claim.unit.end }
+              activeResidue: message.activeResidue
             };
             if (currentView === "mine") renderCurrentView();
           } else if (message.type === "done") {
@@ -167,21 +171,20 @@ async function contributionLoop() {
         activeWorker.onerror = reject;
         activeWorker.postMessage({
           type: "start",
-          job: { coords: claim.coords, helices, unit: claim.unit, timeBudgetMs: TIME_BUDGET_MS }
+          job: { dihedrals: claim.phiPsi, helices, residueCount, timeBudgetMs: TIME_BUDGET_MS }
         });
       });
 
       els.deviceStatus.textContent = "submitting result\u2026";
-      const submission = await submitResult(claim.unit.id, result.coords);
+      const submission = await submitResult(claim.trajectoryId, result.dihedrals);
       deviceCompletedCount += 1;
       els.deviceCompleted.textContent = deviceCompletedCount;
 
       latestGlobal = {
-        coords: submission.coords,
+        caTrace: caTraceFromPhiPsi(submission.phiPsi),
         helices,
         initialEnergy: latestGlobal ? latestGlobal.initialEnergy : submission.energy,
         energy: submission.energy,
-        units: latestGlobal ? latestGlobal.units : [],
         claims: latestGlobal ? latestGlobal.claims : {},
         stats: submission.stats
       };

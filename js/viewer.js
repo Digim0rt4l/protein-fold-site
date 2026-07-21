@@ -76,17 +76,17 @@ function centerOf(coords) {
   return center;
 }
 
-function isInHighlightRange(residueNumber, highlightRange) {
-  return Boolean(highlightRange) && residueNumber >= highlightRange.start && residueNumber <= highlightRange.end;
+function isHighlightedResidue(residueNumber, highlightResidue) {
+  return highlightResidue != null && residueNumber === highlightResidue;
 }
 
-function colorForResidue(residueNumber, helices, highlightRange) {
-  if (isInHighlightRange(residueNumber, highlightRange)) return COLOR_ACTIVE;
+function colorForResidue(residueNumber, helices, highlightResidue) {
+  if (isHighlightedResidue(residueNumber, highlightResidue)) return COLOR_ACTIVE;
   if (helices.some((helix) => residueNumber >= helix.start && residueNumber <= helix.end)) return COLOR_HELIX;
   return COLOR_COIL;
 }
 
-function render(coords, helices, highlightRange) {
+function render(coords, helices, highlightResidue) {
   if (!scene || !group) return;
   clearGroup();
   activePulse.mesh = null;
@@ -105,7 +105,7 @@ function render(coords, helices, highlightRange) {
     const fraction = i / tubularSegments;
     const residueIndex = Math.min(coords.length - 1, Math.round(fraction * (coords.length - 1)));
     const residueNumber = residueIndex + 1;
-    const color = new THREE.Color(colorForResidue(residueNumber, helices, highlightRange));
+    const color = new THREE.Color(colorForResidue(residueNumber, helices, highlightResidue));
     for (let ring = 0; ring < RADIAL_SEGMENTS + 1; ring++) colors.push(color.r, color.g, color.b);
   }
   tubeGeometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
@@ -120,12 +120,11 @@ function render(coords, helices, highlightRange) {
   group.add(new THREE.Mesh(tubeGeometry, tubeMaterial));
 
   const sphereGeometry = new THREE.SphereGeometry(0.85, 12, 12);
-  const midpointIndex = highlightRange ? Math.floor((highlightRange.start - 1 + highlightRange.end - 1) / 2) : -1;
 
   vectors.forEach((vector, index) => {
     const residueNumber = index + 1;
-    const highlighted = isInHighlightRange(residueNumber, highlightRange);
-    const color = colorForResidue(residueNumber, helices, highlightRange);
+    const highlighted = isHighlightedResidue(residueNumber, highlightResidue);
+    const color = colorForResidue(residueNumber, helices, highlightResidue);
     const material = new THREE.MeshStandardMaterial({
       color,
       emissive: color,
@@ -134,7 +133,7 @@ function render(coords, helices, highlightRange) {
     const sphere = new THREE.Mesh(sphereGeometry, material);
     sphere.position.copy(vector);
     group.add(sphere);
-    if (highlighted && index === midpointIndex) activePulse.mesh = sphere;
+    if (highlighted) activePulse.mesh = sphere;
   });
 }
 
