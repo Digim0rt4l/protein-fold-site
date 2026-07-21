@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const { updateJsonFile } = require("./_github");
-const { STATE_PATH, CLAIM_TTL_MS, expireOldClaims } = require("./_state");
+const { STATE_PATH, CLAIM_TTL_MS, freshState, expireOldClaims } = require("./_state");
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
@@ -26,7 +26,7 @@ exports.handler = async function (event) {
     await updateJsonFile(
       STATE_PATH,
       (data) => {
-        const state = data || require("./_state").freshState();
+        const state = data || freshState();
         expireOldClaims(state);
         state.claims[trajectoryId] = {
           clientId,

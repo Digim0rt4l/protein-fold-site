@@ -65,4 +65,4 @@ async function updateJsonFile(path, mutateFn, message, attempts = 5) {
   }
 }
 
-module.exports = { getJsonFile, putJsonFile, updateJsonFile };
+module.exports = { getJsonFile, updateJsonFile };

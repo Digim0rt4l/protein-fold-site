@@ -1,5 +1,5 @@
 const { updateJsonFile } = require("./_github");
-const { STATE_PATH, ENSEMBLE_SIZE, expireOldClaims } = require("./_state");
+const { STATE_PATH, ENSEMBLE_SIZE, freshState, expireOldClaims } = require("./_state");
 const geometry = require("../../js/geometry.js");
 const energy = require("../../js/energy.js");
 
@@ -27,11 +27,11 @@ exports.handler = async function (event) {
     await updateJsonFile(
       STATE_PATH,
       (data) => {
-        const state = data || require("./_state").freshState();
+        const state = data || freshState();
         expireOldClaims(state);
 
         if (phiPsi.length === state.protein.residueCount) {
-          const residues = geometry.buildBackbone(state.protein.residueCount, phiPsi);
+          const residues = geometry.buildBackbone(state.protein.sequence, phiPsi);
           const candidateEnergy = energy.totalEnergy(residues, phiPsi, state.protein.helices);
 
           state.ensemble.push({ phiPsi, energy: candidateEnergy, submittedAt: new Date().toISOString() });
