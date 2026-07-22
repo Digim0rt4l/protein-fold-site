@@ -4,6 +4,7 @@ const EPOCH_SIZE = 50;
 const els = {
   energy: document.getElementById("stat-energy"),
   improvement: document.getElementById("stat-improvement"),
+  rmsd: document.getElementById("stat-rmsd"),
   completed: document.getElementById("stat-completed"),
   contributors: document.getElementById("stat-contributors"),
   claimed: document.getElementById("stat-claimed"),
@@ -25,6 +26,16 @@ const els = {
   hideStatsBtn: document.getElementById("hide-stats-btn"),
   showStatsBtn: document.getElementById("show-stats-btn")
 };
+
+let referenceCaTrace = null;
+
+function getReferenceCaTrace(sequence, helices) {
+  if (referenceCaTrace) return referenceCaTrace;
+  const referenceDihedrals = window.ProteinGeometry.buildReferenceDihedrals(sequence.length, helices);
+  const referenceResidues = window.ProteinGeometry.buildBackbone(sequence, referenceDihedrals);
+  referenceCaTrace = window.ProteinGeometry.caTrace(referenceResidues);
+  return referenceCaTrace;
+}
 
 function getClientId() {
   let id = localStorage.getItem("proteinfold_client_id");
@@ -76,10 +87,16 @@ function setStatsVisible(visible) {
   els.showStatsBtn.hidden = visible;
 }
 
-function updateGlobalStatsUI(data) {
+function updateGlobalStatsUI(data, sequence) {
   els.energy.textContent = formatEnergy(data.energy);
   const improvement = data.initialEnergy - data.energy;
   els.improvement.textContent = (improvement >= 0 ? "-" : "+") + Math.abs(improvement).toFixed(2);
+
+  const referenceTrace = getReferenceCaTrace(sequence, data.helices);
+  const currentTrace = window.ProteinGeometry.caTrace(data.residues);
+  const rmsd = window.ProteinGeometry.alignedRmsd(currentTrace, referenceTrace);
+  els.rmsd.textContent = rmsd.toFixed(2) + " \u00c5";
+
   els.completed.textContent = data.stats.totalCompleted;
   els.contributors.textContent = Object.keys(data.stats.contributors || {}).length;
   els.claimed.textContent = String(Object.keys(data.claims || {}).length);
@@ -103,7 +120,7 @@ async function fetchStatus() {
     claims: data.claims,
     stats: data.stats
   };
-  updateGlobalStatsUI(latestGlobal);
+  updateGlobalStatsUI(latestGlobal, data.protein.sequence);
   if (currentView === "global") renderCurrentView();
   return data;
 }
@@ -182,9 +199,9 @@ async function contributionLoop() {
         claims: submission.claims,
         stats: submission.stats
       };
-      updateGlobalStatsUI(latestGlobal);
+      updateGlobalStatsUI(latestGlobal, sequence);
       if (currentView === "global") renderCurrentView();
-    } catch (error) {
+    } catch {
       els.deviceStatus.textContent = "hit a snag, retrying\u2026";
       await new Promise((resolve) => setTimeout(resolve, 4000));
     }

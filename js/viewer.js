@@ -5,8 +5,11 @@ const COLOR_HELIX = 0x35d9c0;
 const COLOR_COIL = 0x8993a4;
 const COLOR_ACTIVE = 0xffb454;
 const COLOR_SIDECHAIN = 0x5b6b85;
+const COLOR_OXYGEN = 0xe0524a;
 const RADIAL_SEGMENTS = 12;
 const SIDE_CHAIN_SPHERE_RADIUS = { 1: 0.5, 2: 0.7, 3: 0.9 };
+const TRANSITION_DURATION_MS = 350;
+const TRANSITION_FRAME_INTERVAL_MS = 33;
 
 let scene = null;
 let camera = null;
@@ -15,6 +18,14 @@ let controls = null;
 let container = null;
 let group = null;
 let activePulse = { mesh: null, t: 0 };
+
+let previousResidues = null;
+let targetResidues = null;
+let transitionHelices = [];
+let transitionHighlight = null;
+let transitionStartTime = 0;
+let lastDrawnAt = 0;
+let lastDrawnT = -1;
 
 function init(containerEl) {
   container = containerEl;
@@ -28,7 +39,7 @@ function init(containerEl) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
-  } catch (error) {
+  } catch {
     container.innerHTML = "<p class=\"viewer-fallback\">3D rendering isn't supported in this browser.</p>";
     return;
   }
@@ -82,6 +93,24 @@ function subtractVector(point, center) {
   return { x: point.x - center.x, y: point.y - center.y, z: point.z - center.z };
 }
 
+function lerpPoint(a, b, t) {
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
+}
+
+function lerpResidues(fromResidues, toResidues, t) {
+  return toResidues.map((toResidue, index) => {
+    const fromResidue = fromResidues[index];
+    return {
+      CA: lerpPoint(fromResidue.CA, toResidue.CA, t),
+      C: lerpPoint(fromResidue.C, toResidue.C, t),
+      O: lerpPoint(fromResidue.O, toResidue.O, t),
+      CB: toResidue.CB ? lerpPoint(fromResidue.CB, toResidue.CB, t) : null,
+      sideChain: toResidue.sideChain.map((atom, chainIndex) => lerpPoint(fromResidue.sideChain[chainIndex], atom, t)),
+      sideChainSize: toResidue.sideChainSize
+    };
+  });
+}
+
 function isHighlightedResidue(residueNumber, highlightResidue) {
   return highlightResidue != null && residueNumber === highlightResidue;
 }
@@ -110,8 +139,7 @@ function createBondLine(pointA, pointB, color) {
   return new THREE.Line(geometry, material);
 }
 
-function render(residues, helices, highlightResidue) {
-  if (!scene || !group) return;
+function drawScene(residues, helices, highlightResidue) {
   clearGroup();
   activePulse.mesh = null;
   if (!residues || residues.length < 2) return;
@@ -120,8 +148,10 @@ function render(residues, helices, highlightResidue) {
   const center = centerOf(caPoints);
   const centeredResidues = residues.map((residue) => ({
     CA: subtractVector(residue.CA, center),
+    C: subtractVector(residue.C, center),
+    O: subtractVector(residue.O, center),
     CB: residue.CB ? subtractVector(residue.CB, center) : null,
-    SC: residue.SC ? subtractVector(residue.SC, center) : null,
+    sideChain: residue.sideChain.map((atom) => subtractVector(atom, center)),
     sideChainSize: residue.sideChainSize
   }));
 
@@ -165,30 +195,78 @@ function render(residues, helices, highlightResidue) {
     group.add(sphere);
     if (highlighted) activePulse.mesh = sphere;
 
+    const oxygenColor = highlighted ? COLOR_ACTIVE : COLOR_OXYGEN;
+    const oxygenGeometry = new THREE.SphereGeometry(0.4, 10, 10);
+    const oxygenSphere = new THREE.Mesh(oxygenGeometry, createSideChainMaterial(oxygenColor, highlighted));
+    oxygenSphere.position.set(residue.O.x, residue.O.y, residue.O.z);
+    group.add(oxygenSphere);
+    group.add(createBondLine(residue.C, residue.O, oxygenColor));
+
     if (residue.CB) {
       const sideChainColor = highlighted ? COLOR_ACTIVE : COLOR_SIDECHAIN;
-      const sideChainRadius = SIDE_CHAIN_SPHERE_RADIUS[residue.sideChainSize] || SIDE_CHAIN_SPHERE_RADIUS[1];
-      const sideChainGeometry = new THREE.SphereGeometry(sideChainRadius, 10, 10);
+      const baseRadius = SIDE_CHAIN_SPHERE_RADIUS[residue.sideChainSize] || SIDE_CHAIN_SPHERE_RADIUS[1];
+      const sideChainGeometry = new THREE.SphereGeometry(baseRadius, 10, 10);
       const sideChainSphere = new THREE.Mesh(sideChainGeometry, createSideChainMaterial(sideChainColor, highlighted));
       sideChainSphere.position.set(residue.CB.x, residue.CB.y, residue.CB.z);
       group.add(sideChainSphere);
 
       group.add(createBondLine(residue.CA, residue.CB, sideChainColor));
 
-      if (residue.SC) {
-        const distalGeometry = new THREE.SphereGeometry(sideChainRadius * 0.75, 10, 10);
-        const distalSphere = new THREE.Mesh(distalGeometry, createSideChainMaterial(sideChainColor, highlighted));
-        distalSphere.position.set(residue.SC.x, residue.SC.y, residue.SC.z);
-        group.add(distalSphere);
+      let previousAtom = residue.CB;
+      residue.sideChain.forEach((atom, chainIndex) => {
+        const chainRadius = baseRadius * Math.max(0.35, 0.75 - chainIndex * 0.12);
+        const chainGeometry = new THREE.SphereGeometry(chainRadius, 10, 10);
+        const chainSphere = new THREE.Mesh(chainGeometry, createSideChainMaterial(sideChainColor, highlighted));
+        chainSphere.position.set(atom.x, atom.y, atom.z);
+        group.add(chainSphere);
 
-        group.add(createBondLine(residue.CB, residue.SC, sideChainColor));
-      }
+        group.add(createBondLine(previousAtom, atom, sideChainColor));
+        previousAtom = atom;
+      });
     }
   });
 }
 
+function render(residues, helices, highlightResidue) {
+  if (!scene || !group || !residues || residues.length < 2) return;
+
+  const now = performance.now();
+  const shapeChanged = !targetResidues || targetResidues.length !== residues.length;
+
+  if (shapeChanged) {
+    previousResidues = residues;
+    targetResidues = residues;
+    transitionStartTime = now - TRANSITION_DURATION_MS;
+  } else {
+    const elapsed = now - transitionStartTime;
+    const t = Math.max(0, Math.min(1, elapsed / TRANSITION_DURATION_MS));
+    previousResidues = lerpResidues(previousResidues, targetResidues, t);
+    targetResidues = residues;
+    transitionStartTime = now;
+  }
+
+  transitionHelices = helices;
+  transitionHighlight = highlightResidue;
+  lastDrawnT = -1;
+}
+
 function animate() {
   requestAnimationFrame(animate);
+
+  if (targetResidues) {
+    const now = performance.now();
+    const elapsed = now - transitionStartTime;
+    const t = Math.max(0, Math.min(1, elapsed / TRANSITION_DURATION_MS));
+    const dueForRedraw = now - lastDrawnAt >= TRANSITION_FRAME_INTERVAL_MS;
+
+    if (t !== lastDrawnT && (t >= 1 || dueForRedraw)) {
+      const interpolated = t >= 1 ? targetResidues : lerpResidues(previousResidues, targetResidues, t);
+      drawScene(interpolated, transitionHelices, transitionHighlight);
+      lastDrawnAt = now;
+      lastDrawnT = t;
+    }
+  }
+
   if (activePulse.mesh) {
     activePulse.t += 0.06;
     const scale = 1 + 0.35 * Math.abs(Math.sin(activePulse.t));
