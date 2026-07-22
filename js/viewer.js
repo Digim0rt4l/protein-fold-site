@@ -49,6 +49,8 @@ function init(containerEl) {
   controls.dampingFactor = 0.08;
   controls.autoRotate = true;
   controls.autoRotateSpeed = 0.6;
+  controls.minDistance = 15;
+  controls.maxDistance = 200;
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.65));
 
@@ -227,8 +229,35 @@ function drawScene(residues, helices, highlightResidue) {
   });
 }
 
+function boundingRadius(residues, center) {
+  let maxDistanceSquared = 0;
+  residues.forEach((residue) => {
+    const atoms = [residue.N, residue.CA, residue.C, residue.O];
+    if (residue.CB) atoms.push(residue.CB);
+    residue.sideChain.forEach((atom) => atoms.push(atom));
+    atoms.forEach((atom) => {
+      const dx = atom.x - center.x;
+      const dy = atom.y - center.y;
+      const dz = atom.z - center.z;
+      const distanceSquared = dx * dx + dy * dy + dz * dz;
+      if (distanceSquared > maxDistanceSquared) maxDistanceSquared = distanceSquared;
+    });
+  });
+  return Math.sqrt(maxDistanceSquared);
+}
+
+function updateZoomLimits(residues) {
+  if (!controls) return;
+  const center = centerOf(residues.map((residue) => residue.CA));
+  const radius = boundingRadius(residues, center);
+  controls.minDistance = Math.max(8, radius * 0.25);
+  controls.maxDistance = Math.min(400, radius * 3.5);
+}
+
 function render(residues, helices, highlightResidue) {
   if (!scene || !group || !residues || residues.length < 2) return;
+
+  updateZoomLimits(residues);
 
   const now = performance.now();
   const shapeChanged = !targetResidues || targetResidues.length !== residues.length;
