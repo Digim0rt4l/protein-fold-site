@@ -31,7 +31,7 @@
       </span>
       <div class="brand-text">
         <h1>Protein Fold Site</h1>
-        <p>distributed conformational search &middot; PDB 1IYT &middot; Alzheimer&rsquo;s research</p>
+        <p>Distributed Conformational Search &middot; PDB 1IYT &middot; Alzheimer&rsquo;s-Linked Protein</p>
       </div>
     </div>
     <button id="about-btn" class="ghost-btn" type="button" aria-haspopup="dialog">What is this?</button>
@@ -117,7 +117,7 @@
     </section>
   </main>
 
-  <dialog id="about-dialog">
+  <dialog id="about-dialog" tabindex="-1">
     <p>This page is running a distributed conformational search on amyloid-beta 1-42, the peptide known as PDB entry 1IYT, whose aggregation is central to the amyloid hypothesis of Alzheimer's disease.</p>
     <p>Each visitor's device builds a real backbone, one nitrogen, carbon-alpha, and carbon atom per amino acid, connected using the same standard bond lengths and bond angles used in real structural biology software. Most side chains are represented by two further atoms rather than one: a base atom fixed to the backbone, and a second atom beyond it that can rotate independently around that connection, the same first side-chain torsion angle, called chi1, that real structural biology uses. Glycine correctly has no side chain atom at all, and alanine correctly has only the fixed base atom with no further rotation, matching real chemistry in both cases. The shape of the backbone is controlled by its phi and psi torsion angles, the same internal coordinates real protein modeling tools use, rather than by moving atoms around directly. The very first trajectory ever run started from a randomized, extended, unfolded chain with randomized side-chain angles, not from the known answer, and every trajectory since has built on the best result any device has found so far.</p>
     <p>Each device runs its own independent trajectory, repeatedly proposing a small change to a single backbone or side-chain torsion angle. A change that improves the scoring function is always kept. A change that makes it worse is still sometimes kept, with a chance that starts fairly high and steadily shrinks as the run continues, the same cooling strategy real simulated annealing search methods use to avoid getting permanently stuck in a shape that only looks good locally. That scoring function penalizes atoms crashing into each other, rewards backbone torsion angles that sit near the alpha helix basin in the regions of the chain already known to form a helix, and separately rewards side-chain torsion angles that sit near one of the three real, physically favored rotational positions rather than an eclipsed, disfavored one. This is a real, working local search over torsion space, not a pre-scripted animation.</p>
@@ -132,4 +132,3 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
-
