@@ -1,16 +1,17 @@
 {
-  "pdbId": "1IYT",
-  "name": "Amyloid beta-peptide (1-42)",
-  "shortName": "A\u03b242",
-  "organism": "Homo sapiens",
-  "relevance": "Aggregation of A\u03b242 into oligomers and fibrils is a central event in Alzheimer's disease. Understanding how this peptide folds and misfolds is directly relevant to the amyloid hypothesis and to structure-based drug design.",
-  "citation": "Crescenzi O, Tomaselli S, Guerrini R, Salvadori S, D'Ursi AM, Temussi PA, Picone D. \"Solution structure of the Alzheimer amyloid beta-peptide (1-42) in an apolar microenvironment.\" Eur J Biochem. 2002;269(22):5642-8.",
-  "source": "RCSB PDB entry 1IYT (SEQRES + HELIX records, NMR solution structure)",
-  "sequence": "DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVVIA",
-  "residueCount": 42,
+  "pdbId": "1VII",
+  "name": "Villin headpiece subdomain (HP36)",
+  "shortName": "HP36",
+  "organism": "Gallus gallus (chicken villin), used as a general model for the human/vertebrate villin headpiece",
+  "relevance": "HP36 is the smallest known naturally occurring protein that folds cooperatively into a single, stable, well-defined three-helix bundle. Its small size, fast folding, and simple topology have made it the standard benchmark model system used to validate protein-folding simulation methods, including early distributed-computing folding projects. Villin itself is an actin-binding protein that structures the microvilli of intestinal and kidney epithelial cells, and villin expression is used diagnostically in pathology to help identify the tissue origin of certain tumors.",
+  "citation": "McKnight CJ, Matsudaira PT, Kim PS. NMR structure of the 35-residue villin headpiece subdomain. Nat Struct Biol. 1997;4(3):180-4. PDB entry 1VII.",
+  "source": "RCSB PDB entry 1VII (sequence and helix boundaries from the deposited NMR structure, as reported in the primary literature and multiple subsequent computational-biology studies)",
+  "sequence": "MLSDEDFKAVFGMTRSAFANLPLWKQQNLKKEKGLF",
+  "residueCount": 36,
   "helices": [
-    { "start": 7, "end": 26, "label": "Helix 1" },
-    { "start": 27, "end": 40, "label": "Helix 2" }
+    { "start": 4, "end": 8, "label": "Helix 1" },
+    { "start": 15, "end": 18, "label": "Helix 2" },
+    { "start": 23, "end": 32, "label": "Helix 3" }
   ],
-  "note": "The starting conformation is a randomized, extended (unfolded) chain built from real bond lengths and bond angles using a standard internal-coordinate placement algorithm. The helix ranges below come from the real, PDB-deposited secondary-structure assignment for this entry (helix-kink-helix, per the RCSB header for 1IYT) and are used only to bias the scoring function toward the known helical regions, not to preset the starting shape. This is a backbone (N, C-alpha, C) torsion-space model with an additional simplified side-chain representation per residue (a base atom, plus for most residues a second atom with its own independently rotatable chi1 angle), not the literal deposited atomic coordinates and not an all-atom force field."
+  "note": "Unlike amyloid-beta, HP36 has one well-defined native fold, which is why it was chosen: it allows a genuine 'distance to the folded target' comparison to be meaningful, whereas amyloid-beta does not have a single native answer to compare against. The 'reference' structure used for that comparison in this app is not the literal deposited NMR coordinates; it is a structure built by this app's own geometry engine using ideal alpha-helix torsion angles applied to the real helix boundaries listed above, plus a canonical (not individually rotamer-optimized) side-chain angle for every residue. It is a legitimate, real-geometry approximation of the correctly-folded shape, not a substitute for the literal experimental structure."
 }
