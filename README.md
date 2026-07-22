@@ -56,6 +56,17 @@ all-atom physics. It will not produce new, publishable Alzheimer's science on it
   point, so successive contributions build on each other.
 - **Storage**: a Netlify Function reads and writes one shared JSON state file in a
   GitHub repository via the Contents API, so no separate database is required.
+  `get-status` keeps a short-lived in-memory cache (a few seconds) so several requests
+  landing close together on the same warm instance don't turn into that many separate
+  GitHub API reads.
+- **Fetching**: the browser has no recurring polling timer at all. It fetches the
+  shared status once on initial page load, again whenever the tab regains visibility
+  after being backgrounded, and again whenever the person switches to the Global best
+  view. A device that's actively contributing gets its freshest data for free: the
+  response from submitting a completed trajectory already contains the updated shared
+  state, so no separate status fetch is needed while contributing. The tradeoff is
+  that a passive viewer who never switches views or backgrounds the tab may see a
+  static snapshot until one of those events happens.
 
 ## Project structure
 
