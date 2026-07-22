@@ -211,11 +211,8 @@ els.toggleMine.addEventListener("click", () => setView("mine"));
 els.aboutBtn.addEventListener("click", () => {
   els.aboutDialog.showModal();
   els.aboutClose.blur();
-  els.aboutDialog.focus();
+  els.aboutDialog.focus({ preventScroll: true });
   els.aboutDialog.scrollTop = 0;
-  setTimeout(() => {
-    els.aboutDialog.scrollTop = 0;
-  }, 0);
 });
 els.aboutClose.addEventListener("click", () => els.aboutDialog.close());
 
