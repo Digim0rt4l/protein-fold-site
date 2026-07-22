@@ -51,8 +51,16 @@ async function putJsonFile(path, dataObj, sha, message) {
   return result.content.sha;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function updateJsonFile(path, mutateFn, message, attempts = 5) {
   for (let attempt = 0; attempt < attempts; attempt++) {
+    if (attempt > 0) {
+      const backoffMs = Math.min(800, 100 * Math.pow(2, attempt - 1));
+      await sleep(backoffMs + Math.random() * backoffMs);
+    }
     const { data, sha } = await getJsonFile(path);
     const next = await mutateFn(data);
     try {

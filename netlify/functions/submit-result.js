@@ -27,10 +27,13 @@ exports.handler = async function (event) {
     await updateJsonFile(
       STATE_PATH,
       (data) => {
+        accepted = false;
         const state = data || freshState();
         expireOldClaims(state);
 
-        if (phiPsi.length === state.protein.residueCount) {
+        const isValidClaim = Boolean(state.claims[trajectoryId]);
+
+        if (isValidClaim && phiPsi.length === state.protein.residueCount) {
           const residues = geometry.buildBackbone(state.protein.sequence, phiPsi);
           const candidateEnergy = energy.totalEnergy(residues, phiPsi, state.protein.helices);
 
@@ -46,10 +49,13 @@ exports.handler = async function (event) {
         }
 
         delete state.claims[trajectoryId];
-        state.stats.totalCompleted += 1;
-        if (accepted) state.stats.totalAccepted += 1;
-        state.stats.contributors[clientId] = (state.stats.contributors[clientId] || 0) + 1;
-        state.stats.lastUpdated = new Date().toISOString();
+
+        if (isValidClaim) {
+          state.stats.totalCompleted += 1;
+          if (accepted) state.stats.totalAccepted += 1;
+          state.stats.contributors[clientId] = (state.stats.contributors[clientId] || 0) + 1;
+          state.stats.lastUpdated = new Date().toISOString();
+        }
 
         resultState = state;
         return state;
