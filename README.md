@@ -54,6 +54,18 @@ all-atom physics. It will not produce new, publishable Alzheimer's science on it
   client is trusted blindly), kept as part of a small ensemble of recent independent
   results, and the current best-found result becomes the next trajectory's starting
   point, so successive contributions build on each other.
+- **Write safety**: writes use optimistic concurrency (read the file's exact version,
+  write only if nothing changed underneath it, retry against fresh data otherwise) so
+  two devices writing at nearly the same instant can't silently overwrite each other.
+  Retries use exponential backoff with jitter, waiting a little longer and by a
+  randomized amount before each attempt, to reduce the chance of two writers
+  repeatedly colliding with each other. This is race-and-retry, not a true queue:
+  there is no ordering guarantee, and after 5 attempts a write gives up and fails
+  outright rather than waiting indefinitely. A true queue would need a persistent
+  process or an external queue service, which this static-site-plus-functions
+  architecture doesn't have. A submission is only counted toward stats and the
+  ensemble if its trajectory is still a genuinely active claim at write time, so a
+  duplicate or replayed submission can't be counted twice.
 - **Storage**: a Netlify Function reads and writes one shared JSON state file in a
   GitHub repository via the Contents API, so no separate database is required.
   `get-status` keeps a short-lived in-memory cache (a few seconds) so several requests
