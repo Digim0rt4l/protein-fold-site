@@ -354,6 +354,7 @@ body {
   max-width: 520px;
   width: 90%;
   max-height: 80vh;
+  max-height: 80dvh;
   overflow-y: auto;
   border: 1px solid var(--panel-border);
   border-radius: 16px;
@@ -383,6 +384,7 @@ body {
     top: auto;
     bottom: 88px;
     max-height: 44vh;
+    max-height: 44dvh;
   }
 
   .bottom-controls {
