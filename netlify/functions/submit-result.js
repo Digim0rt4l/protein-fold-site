@@ -63,8 +63,10 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         accepted,
         energy: resultState.energy,
+        initialEnergy: resultState.initialEnergy,
         phiPsi: resultState.phiPsi,
         ensembleSize: resultState.ensemble.length,
+        claims: resultState.claims,
         stats: resultState.stats
       })
     };
