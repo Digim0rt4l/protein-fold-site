@@ -208,7 +208,12 @@ els.runBtn.addEventListener("click", () => {
 els.toggleGlobal.addEventListener("click", () => setView("global"));
 els.toggleMine.addEventListener("click", () => setView("mine"));
 
-els.aboutBtn.addEventListener("click", () => els.aboutDialog.showModal());
+els.aboutBtn.addEventListener("click", () => {
+  els.aboutDialog.showModal();
+  requestAnimationFrame(() => {
+    els.aboutDialog.scrollTop = 0;
+  });
+});
 els.aboutClose.addEventListener("click", () => els.aboutDialog.close());
 
 els.hideStatsBtn.addEventListener("click", () => setStatsVisible(false));
