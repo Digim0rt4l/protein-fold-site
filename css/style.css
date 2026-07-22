@@ -363,6 +363,7 @@ body {
   font-size: 13.5px;
   line-height: 1.6;
   font-family: var(--font-body);
+  outline: none;
 }
 
 #about-dialog::backdrop {
