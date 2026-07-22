@@ -177,9 +177,9 @@ async function contributionLoop() {
       latestGlobal = {
         residues: residuesFromPhiPsi(submission.phiPsi, sequence),
         helices,
-        initialEnergy: latestGlobal ? latestGlobal.initialEnergy : submission.energy,
+        initialEnergy: submission.initialEnergy,
         energy: submission.energy,
-        claims: latestGlobal ? latestGlobal.claims : {},
+        claims: submission.claims,
         stats: submission.stats
       };
       updateGlobalStatsUI(latestGlobal);
