@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Protein Fold Site</title>
-<meta name="description" content="Protein Fold Site — contribute idle device compute to a distributed, browser-based conformational search of the Alzheimer's-linked amyloid-beta (1-42) peptide." />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css" />
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Protein Fold Site</title>
+  <meta name="description" content="Protein Fold Site — contribute idle device compute to a distributed, browser-based conformational search of the villin headpiece subdomain (HP36), the classic small-protein benchmark for validating protein-folding methods." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
 
@@ -31,14 +31,14 @@
       </span>
       <div class="brand-text">
         <h1>Protein Fold Site</h1>
-        <p>Distributed Conformational Search &middot; PDB 1IYT &middot; Alzheimer&rsquo;s-Linked Protein</p>
+        <p>Distributed Conformational Search &middot; PDB 1VII &middot; Folding Benchmark Protein</p>
       </div>
     </div>
     <button id="about-btn" class="ghost-btn" type="button" aria-haspopup="dialog">What is this?</button>
   </header>
 
   <main class="stage">
-    <div id="viewer" class="viewer" role="img" aria-label="3D rendering of the amyloid-beta 42 peptide backbone and side chains"></div>
+    <div id="viewer" class="viewer" role="img" aria-label="3D rendering of the villin headpiece subdomain backbone and side chains"></div>
 
     <div class="bottom-controls">
       <button id="show-stats-btn" class="show-stats-btn" type="button" hidden>Show stats</button>
@@ -68,6 +68,10 @@
       <dl class="stat-row">
         <dt>Improvement so far</dt>
         <dd><span id="stat-improvement" class="mono">&mdash;</span></dd>
+      </dl>
+      <dl class="stat-row">
+        <dt>Distance to folded reference</dt>
+        <dd><span id="stat-rmsd" class="mono">&mdash;</span></dd>
       </dl>
       <dl class="stat-row">
         <dt>Trajectories completed</dt>
@@ -118,11 +122,11 @@
   </main>
 
   <dialog id="about-dialog" tabindex="-1">
-    <p>This page is running a distributed conformational search on amyloid-beta 1-42, the peptide known as PDB entry 1IYT, whose aggregation is central to the amyloid hypothesis of Alzheimer's disease.</p>
-    <p>Each visitor's device builds a real backbone, one nitrogen, carbon-alpha, and carbon atom per amino acid, connected using the same standard bond lengths and bond angles used in real structural biology software. Most side chains are represented by two further atoms rather than one: a base atom fixed to the backbone, and a second atom beyond it that can rotate independently around that connection, the same first side-chain torsion angle, called chi1, that real structural biology uses. Glycine correctly has no side chain atom at all, and alanine correctly has only the fixed base atom with no further rotation, matching real chemistry in both cases. The shape of the backbone is controlled by its phi and psi torsion angles, the same internal coordinates real protein modeling tools use, rather than by moving atoms around directly. The very first trajectory ever run started from a randomized, extended, unfolded chain with randomized side-chain angles, not from the known answer, and every trajectory since has built on the best result any device has found so far.</p>
-    <p>Each device runs its own independent trajectory, repeatedly proposing a small change to a single backbone or side-chain torsion angle. A change that improves the scoring function is always kept. A change that makes it worse is still sometimes kept, with a chance that starts fairly high and steadily shrinks as the run continues, the same cooling strategy real simulated annealing search methods use to avoid getting permanently stuck in a shape that only looks good locally. That scoring function penalizes atoms crashing into each other, rewards backbone torsion angles that sit near the alpha helix basin in the regions of the chain already known to form a helix, and separately rewards side-chain torsion angles that sit near one of the three real, physically favored rotational positions rather than an eclipsed, disfavored one. This is a real, working local search over torsion space, not a pre-scripted animation.</p>
-    <p>Results are sent to a server function, independently re-scored from scratch so no device is simply trusted, and kept as part of a small ensemble of independent results. The single best result found so far across every trajectory is shown as the global structure.</p>
-    <p>Please calibrate your expectations. The scoring function is a simplified stand-in for a real molecular force field. Side chains are represented by at most two size-scaled pseudo-atoms and one rotatable angle each, not their real atomic detail, and longer real side chains actually have further independent rotations beyond that first one which this model does not include. There is no solvent, and there is no validated physics beyond bond geometry and a basic steric and torsional model. This is not a production molecular dynamics engine like Folding at home, and it is not a substitute for tools like AlphaFold or Rosetta. It will not produce new, publishable Alzheimer's science on its own, but it is a genuine, functioning distributed optimization system you can watch work in real time.</p>
+    <p>This page is running a distributed conformational search on the villin headpiece subdomain, known as PDB entry 1VII, the smallest known naturally occurring protein that folds cooperatively into one single, stable, well-defined shape. It was chosen specifically because it has one correct folded answer to search for, unlike some other proteins whose biological significance comes from not settling into a single shape. Villin itself helps structure the surface of intestinal and kidney cells, and this exact small fragment of it is the classic benchmark model system used to test and validate protein-folding simulation methods.</p>
+    <p>Each visitor's device builds a real backbone, one nitrogen, carbon-alpha, carbon, and carbonyl oxygen atom per amino acid, connected using the same standard bond lengths and bond angles used in real structural biology software. The oxygen has no independent rotation of its own; its position is fixed by the same flat, three-way geometry a real carbonyl carbon actually has, once the surrounding backbone atoms are placed. Side chains are built as a chain of further atoms, one per rotatable side-chain torsion angle the real amino acid actually has, using the real number of those angles for each of the twenty amino acids, from zero for glycine up to four for the largest ones. The shape of the backbone is controlled by its phi and psi torsion angles, the same internal coordinates real protein modeling tools use, rather than by moving atoms around directly. The very first trajectory ever run started from a randomized, extended, unfolded chain with randomized side-chain angles, not from the known answer, and every trajectory since has built on the best result any device has found so far.</p>
+    <p>Each device runs its own independent trajectory, repeatedly proposing a small change to a single backbone or side-chain torsion angle. A change that improves the scoring function is always kept. A change that makes it worse is still sometimes kept, with a chance that starts fairly high and steadily shrinks as the run continues, the same cooling strategy real simulated annealing search methods use to avoid getting permanently stuck in a shape that only looks good locally. That scoring function penalizes atoms crashing into each other, rewards backbone torsion angles that sit near the alpha helix basin in the three short regions of the chain already known to form one, and separately rewards every side-chain torsion angle present for sitting near one of the three real, physically favored rotational positions rather than an eclipsed, disfavored one. This is a real, working local search over torsion space, not a pre-scripted animation.</p>
+    <p>Results are sent to a server function, independently re-scored from scratch so no device is simply trusted, and kept as part of a small ensemble of independent results. The single best result found so far across every trajectory is shown as the global structure. A distance figure is also shown, comparing the current best structure against a separately built reference: a version of this same chain folded using ideal, textbook alpha-helix angles applied to the three real helical regions listed above. That reference is a legitimate approximation built with the same real geometry rules as everything else on this page, not the literal experimentally solved coordinates, and the distance figure uses a standard structural-comparison method that first finds the best possible rotation and position match between the two shapes before measuring how different they really are.</p>
+    <p>Please calibrate your expectations. The scoring function is a simplified stand-in for a real molecular force field, using one generic bond length and angle for every side-chain link rather than the true, distinct geometry of each of the twenty amino acids. There is no solvent, and there is no validated physics beyond bond geometry and a basic steric and torsional model. This is not a production molecular dynamics engine like Folding at home, and it is not a substitute for tools like AlphaFold or Rosetta, which predicts a final shape rather than a folding pathway, and which would face real difficulty with a protein like the one this site studied previously, for the same reason that protein was set aside in favor of this one. It is a genuine, functioning distributed optimization system searching toward a real, well-defined target, not a source of new, citable structural biology.</p>
     <button id="about-close" class="primary-btn" type="button">Got it</button>
   </dialog>
 

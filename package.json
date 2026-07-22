@@ -1,7 +1,7 @@
 {
   "name": "protein-fold-site",
   "version": "1.0.0",
-  "description": "Distributed, browser-based torsion-space conformational search for amyloid-beta (1-42), coordinated via GitHub and Netlify Functions.",
+  "description": "Distributed, browser-based torsion-space conformational search for the villin headpiece subdomain (HP36), coordinated via GitHub and Netlify Functions.",
   "private": true,
   "engines": {
     "node": ">=18"
