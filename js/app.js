@@ -1,5 +1,4 @@
 const TIME_BUDGET_MS = 30 * 60 * 1000;
-const STATUS_POLL_MS = 6000;
 const EPOCH_SIZE = 50;
 
 const els = {
@@ -69,6 +68,7 @@ function setView(view) {
   els.toggleGlobal.classList.toggle("active", view === "global");
   els.toggleMine.classList.toggle("active", view === "mine");
   renderCurrentView();
+  if (view === "global") fetchStatus().catch(() => {});
 }
 
 function setStatsVisible(visible) {
@@ -106,11 +106,6 @@ async function fetchStatus() {
   updateGlobalStatsUI(latestGlobal);
   if (currentView === "global") renderCurrentView();
   return data;
-}
-
-function startPolling() {
-  fetchStatus().catch(() => {});
-  setInterval(() => fetchStatus().catch(() => {}), STATUS_POLL_MS);
 }
 
 async function claimTrajectory() {
@@ -219,6 +214,10 @@ els.aboutClose.addEventListener("click", () => els.aboutDialog.close());
 els.hideStatsBtn.addEventListener("click", () => setStatsVisible(false));
 els.showStatsBtn.addEventListener("click", () => setStatsVisible(true));
 
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) fetchStatus().catch(() => {});
+});
+
 window.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("viewer");
   if (window.ProteinViewer) window.ProteinViewer.init(container);
@@ -226,5 +225,5 @@ window.addEventListener("DOMContentLoaded", () => {
     els.runBtn.disabled = true;
     els.deviceStatus.textContent = "unsupported browser";
   }
-  startPolling();
+  fetchStatus().catch(() => {});
 });
