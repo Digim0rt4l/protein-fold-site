@@ -10,7 +10,7 @@ const ENSEMBLE_SIZE = 12;
 function freshState() {
   const phiPsi = geometry.defaultDihedrals(protein.residueCount);
   const residues = geometry.buildBackbone(protein.sequence, phiPsi);
-  const initialEnergy = energy.totalEnergy(residues, phiPsi, protein.helices);
+  const initialEnergy = energy.totalEnergy(residues, phiPsi, protein.helices, geometry.chiCountFor);
   return {
     protein: {
       pdbId: protein.pdbId,

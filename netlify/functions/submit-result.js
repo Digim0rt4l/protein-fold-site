@@ -11,7 +11,7 @@ exports.handler = async function (event) {
   let body;
   try {
     body = JSON.parse(event.body || "{}");
-  } catch (error) {
+  } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
   }
 
@@ -35,7 +35,7 @@ exports.handler = async function (event) {
 
         if (isValidClaim && phiPsi.length === state.protein.residueCount) {
           const residues = geometry.buildBackbone(state.protein.sequence, phiPsi);
-          const candidateEnergy = energy.totalEnergy(residues, phiPsi, state.protein.helices);
+          const candidateEnergy = energy.totalEnergy(residues, phiPsi, state.protein.helices, geometry.chiCountFor);
 
           state.ensemble.push({ phiPsi, energy: candidateEnergy, submittedAt: new Date().toISOString() });
           state.ensemble.sort((a, b) => a.energy - b.energy);

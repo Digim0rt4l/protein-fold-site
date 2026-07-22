@@ -11,7 +11,7 @@ exports.handler = async function (event) {
   try {
     const body = JSON.parse(event.body || "{}");
     clientId = body.clientId;
-  } catch (error) {
+  } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
   }
 

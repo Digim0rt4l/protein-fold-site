@@ -15,7 +15,7 @@ function headers() {
     Authorization: `Bearer ${TOKEN}`,
     Accept: "application/vnd.github+json",
     "Content-Type": "application/json",
-    "User-Agent": "protein-fold-webapp"
+    "User-Agent": "protein-fold-site"
   };
 }
 
