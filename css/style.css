@@ -353,6 +353,8 @@ body {
 #about-dialog {
   max-width: 520px;
   width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
   border: 1px solid var(--panel-border);
   border-radius: 16px;
   background: #0f131a;
