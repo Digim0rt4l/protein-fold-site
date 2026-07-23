@@ -1,5 +1,5 @@
 const { updateJsonFile } = require("./_github");
-const { STATE_PATH, ENSEMBLE_SIZE, freshState, expireOldClaims } = require("./_state");
+const { STATE_PATH, ENSEMBLE_SIZE, freshState, expireOldClaims, isValidIdentifier } = require("./_state");
 const geometry = require("../../js/geometry.js");
 const energy = require("../../js/energy.js");
 
@@ -16,7 +16,7 @@ exports.handler = async function (event) {
   }
 
   const { clientId, trajectoryId, phiPsi } = body;
-  if (!clientId || !trajectoryId || !Array.isArray(phiPsi)) {
+  if (!isValidIdentifier(clientId) || !isValidIdentifier(trajectoryId) || !Array.isArray(phiPsi)) {
     return { statusCode: 400, body: JSON.stringify({ error: "clientId, trajectoryId and phiPsi are required" }) };
   }
 
@@ -32,8 +32,9 @@ exports.handler = async function (event) {
         expireOldClaims(state);
 
         const isValidClaim = Boolean(state.claims[trajectoryId]);
+        const isValidSubmission = geometry.isValidDihedralArray(phiPsi, state.protein.residueCount);
 
-        if (isValidClaim && phiPsi.length === state.protein.residueCount) {
+        if (isValidClaim && isValidSubmission) {
           const residues = geometry.buildBackbone(state.protein.sequence, phiPsi);
           const candidateEnergy = energy.totalEnergy(residues, phiPsi, state.protein.helices, geometry.chiCountFor);
 

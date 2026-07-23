@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const { updateJsonFile } = require("./_github");
-const { STATE_PATH, CLAIM_TTL_MS, freshState, expireOldClaims } = require("./_state");
+const { STATE_PATH, CLAIM_TTL_MS, freshState, expireOldClaims, isValidIdentifier } = require("./_state");
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
@@ -15,7 +15,7 @@ exports.handler = async function (event) {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
   }
 
-  if (!clientId) {
+  if (!isValidIdentifier(clientId)) {
     return { statusCode: 400, body: JSON.stringify({ error: "clientId is required" }) };
   }
 

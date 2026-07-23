@@ -6,6 +6,11 @@ const protein = require("../../data/protein.json");
 const STATE_PATH = "data/state.json";
 const CLAIM_TTL_MS = 40 * 60 * 1000;
 const ENSEMBLE_SIZE = 12;
+const MAX_IDENTIFIER_LENGTH = 128;
+
+function isValidIdentifier(value) {
+  return typeof value === "string" && value.length > 0 && value.length <= MAX_IDENTIFIER_LENGTH;
+}
 
 function freshState() {
   const phiPsi = geometry.defaultDihedrals(protein.residueCount);
@@ -56,5 +61,6 @@ module.exports = {
   ENSEMBLE_SIZE,
   freshState,
   loadState,
-  expireOldClaims
+  expireOldClaims,
+  isValidIdentifier
 };
