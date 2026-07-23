@@ -68,7 +68,7 @@ function renderCurrentView() {
   if (currentView === "global" && latestGlobal) {
     window.ProteinViewer.render(latestGlobal.residues, latestGlobal.helices, null);
   } else if (currentView === "mine" && latestMine) {
-    window.ProteinViewer.render(latestMine.residues, latestMine.helices, latestMine.activeResidue);
+    window.ProteinViewer.render(latestMine.residues, latestMine.helices, latestMine.changedResidues);
   } else if (latestGlobal) {
     window.ProteinViewer.render(latestGlobal.residues, latestGlobal.helices, null);
   }
@@ -172,7 +172,7 @@ async function contributionLoop() {
             latestMine = {
               residues: message.residues,
               helices,
-              activeResidue: message.activeResidue
+              changedResidues: message.changedResidues
             };
             if (currentView === "mine") renderCurrentView();
           } else if (message.type === "done") {

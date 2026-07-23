@@ -17,12 +17,12 @@ let renderer = null;
 let controls = null;
 let container = null;
 let group = null;
-let activePulse = { mesh: null, t: 0 };
+let activePulse = { meshes: [], t: 0 };
 
 let previousResidues = null;
 let targetResidues = null;
 let transitionHelices = [];
-let transitionHighlight = null;
+let transitionHighlights = null;
 let transitionStartTime = 0;
 let lastDrawnAt = 0;
 let lastDrawnT = -1;
@@ -113,12 +113,12 @@ function lerpResidues(fromResidues, toResidues, t) {
   });
 }
 
-function isHighlightedResidue(residueNumber, highlightResidue) {
-  return highlightResidue != null && residueNumber === highlightResidue;
+function isHighlightedResidue(residueNumber, highlightResidues) {
+  return Boolean(highlightResidues) && highlightResidues.includes(residueNumber);
 }
 
-function colorForResidue(residueNumber, helices, highlightResidue) {
-  if (isHighlightedResidue(residueNumber, highlightResidue)) return COLOR_ACTIVE;
+function colorForResidue(residueNumber, helices, highlightResidues) {
+  if (isHighlightedResidue(residueNumber, highlightResidues)) return COLOR_ACTIVE;
   if (helices.some((helix) => residueNumber >= helix.start && residueNumber <= helix.end)) return COLOR_HELIX;
   return COLOR_COIL;
 }
@@ -141,9 +141,9 @@ function createBondLine(pointA, pointB, color) {
   return new THREE.Line(geometry, material);
 }
 
-function drawScene(residues, helices, highlightResidue) {
+function drawScene(residues, helices, highlightResidues) {
   clearGroup();
-  activePulse.mesh = null;
+  activePulse.meshes = [];
   if (!residues || residues.length < 2) return;
 
   const caPoints = residues.map((residue) => residue.CA);
@@ -167,7 +167,7 @@ function drawScene(residues, helices, highlightResidue) {
     const fraction = i / tubularSegments;
     const residueIndex = Math.min(residues.length - 1, Math.round(fraction * (residues.length - 1)));
     const residueNumber = residueIndex + 1;
-    const color = new THREE.Color(colorForResidue(residueNumber, helices, highlightResidue));
+    const color = new THREE.Color(colorForResidue(residueNumber, helices, highlightResidues));
     for (let ring = 0; ring < RADIAL_SEGMENTS + 1; ring++) colors.push(color.r, color.g, color.b);
   }
   tubeGeometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
@@ -185,8 +185,8 @@ function drawScene(residues, helices, highlightResidue) {
 
   centeredResidues.forEach((residue, index) => {
     const residueNumber = index + 1;
-    const highlighted = isHighlightedResidue(residueNumber, highlightResidue);
-    const color = colorForResidue(residueNumber, helices, highlightResidue);
+    const highlighted = isHighlightedResidue(residueNumber, highlightResidues);
+    const color = colorForResidue(residueNumber, helices, highlightResidues);
     const material = new THREE.MeshStandardMaterial({
       color,
       emissive: color,
@@ -195,7 +195,7 @@ function drawScene(residues, helices, highlightResidue) {
     const sphere = new THREE.Mesh(sphereGeometry, material);
     sphere.position.set(residue.CA.x, residue.CA.y, residue.CA.z);
     group.add(sphere);
-    if (highlighted) activePulse.mesh = sphere;
+    if (highlighted) activePulse.meshes.push(sphere);
 
     const oxygenColor = highlighted ? COLOR_ACTIVE : COLOR_OXYGEN;
     const oxygenGeometry = new THREE.SphereGeometry(0.4, 10, 10);
@@ -254,7 +254,7 @@ function updateZoomLimits(residues) {
   controls.maxDistance = Math.min(400, radius * 3.5);
 }
 
-function render(residues, helices, highlightResidue) {
+function render(residues, helices, highlightResidues) {
   if (!scene || !group || !residues || residues.length < 2) return;
 
   updateZoomLimits(residues);
@@ -275,7 +275,7 @@ function render(residues, helices, highlightResidue) {
   }
 
   transitionHelices = helices;
-  transitionHighlight = highlightResidue;
+  transitionHighlights = highlightResidues;
   lastDrawnT = -1;
 }
 
@@ -290,16 +290,16 @@ function animate() {
 
     if (t !== lastDrawnT && (t >= 1 || dueForRedraw)) {
       const interpolated = t >= 1 ? targetResidues : lerpResidues(previousResidues, targetResidues, t);
-      drawScene(interpolated, transitionHelices, transitionHighlight);
+      drawScene(interpolated, transitionHelices, transitionHighlights);
       lastDrawnAt = now;
       lastDrawnT = t;
     }
   }
 
-  if (activePulse.mesh) {
+  if (activePulse.meshes.length) {
     activePulse.t += 0.06;
     const scale = 1 + 0.35 * Math.abs(Math.sin(activePulse.t));
-    activePulse.mesh.scale.setScalar(scale);
+    activePulse.meshes.forEach((mesh) => mesh.scale.setScalar(scale));
   }
   if (controls) controls.update();
   if (renderer && scene && camera) renderer.render(scene, camera);

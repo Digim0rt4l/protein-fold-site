@@ -332,6 +332,20 @@
     return updated;
   }
 
+  function isValidDihedral(dihedral) {
+    return Boolean(dihedral) &&
+      Number.isFinite(dihedral.phi) &&
+      Number.isFinite(dihedral.psi) &&
+      Number.isFinite(dihedral.chi1) &&
+      Number.isFinite(dihedral.chi2) &&
+      Number.isFinite(dihedral.chi3) &&
+      Number.isFinite(dihedral.chi4);
+  }
+
+  function isValidDihedralArray(phiPsi, expectedLength) {
+    return Array.isArray(phiPsi) && phiPsi.length === expectedLength && phiPsi.every(isValidDihedral);
+  }
+
   const api = {
     defaultDihedrals,
     buildReferenceDihedrals,
@@ -339,7 +353,8 @@
     rebuildResidueSideChain,
     caTrace,
     alignedRmsd,
-    chiCountFor
+    chiCountFor,
+    isValidDihedralArray
   };
 
   if (typeof module !== "undefined" && module.exports) {
