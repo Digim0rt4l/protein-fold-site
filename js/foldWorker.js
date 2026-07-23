@@ -22,33 +22,13 @@ function computeEnergy(residues, dihedrals, helices) {
   return self.ProteinEnergy.totalEnergy(residues, dihedrals, helices, self.ProteinGeometry.chiCountFor);
 }
 
-const CHANGE_DETECTION_EPSILON = 1e-6;
-
-function pointsDiffer(a, b) {
-  return Math.abs(a.x - b.x) > CHANGE_DETECTION_EPSILON || Math.abs(a.y - b.y) > CHANGE_DETECTION_EPSILON || Math.abs(a.z - b.z) > CHANGE_DETECTION_EPSILON;
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function residueChanged(before, after) {
-  if (pointsDiffer(before.N, after.N)) return true;
-  if (pointsDiffer(before.CA, after.CA)) return true;
-  if (pointsDiffer(before.C, after.C)) return true;
-  if (pointsDiffer(before.O, after.O)) return true;
-  if (before.CB && pointsDiffer(before.CB, after.CB)) return true;
-  for (let i = 0; i < before.sideChain.length; i++) {
-    if (pointsDiffer(before.sideChain[i], after.sideChain[i])) return true;
-  }
-  return false;
-}
+const YIELD_INTERVAL_MS = 30;
 
-function findChangedResidues(before, after) {
-  const changed = [];
-  for (let i = 0; i < before.length; i++) {
-    if (residueChanged(before[i], after[i])) changed.push(i + 1);
-  }
-  return changed;
-}
-
-function runAnnealing(job) {
+async function runAnnealing(job) {
   const { dihedrals: startDihedrals, helices, sequence, timeBudgetMs } = job;
   const dihedrals = cloneDihedrals(startDihedrals);
   let residues = self.ProteinGeometry.buildBackbone(sequence, dihedrals);
@@ -62,7 +42,7 @@ function runAnnealing(job) {
   const endTemp = 0.02;
   const startTime = Date.now();
   let lastPostTime = startTime;
-  let lastPostedResidues = residues;
+  let lastYieldTime = startTime;
 
   while (running) {
     const elapsedMs = Date.now() - startTime;
@@ -100,17 +80,19 @@ function runAnnealing(job) {
     const now = Date.now();
     if (now - lastPostTime >= 400) {
       lastPostTime = now;
-      const changedResidues = findChangedResidues(lastPostedResidues, residues);
-      lastPostedResidues = residues;
       self.postMessage({
         type: "progress",
         elapsedMs,
         timeBudgetMs,
         energy,
         bestEnergy,
-        residues,
-        changedResidues
+        residues
       });
+    }
+
+    if (now - lastYieldTime >= YIELD_INTERVAL_MS) {
+      lastYieldTime = now;
+      await sleep(0);
     }
   }
 

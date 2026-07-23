@@ -66,11 +66,11 @@ function residuesFromPhiPsi(phiPsi, sequence) {
 function renderCurrentView() {
   if (!window.ProteinViewer) return;
   if (currentView === "global" && latestGlobal) {
-    window.ProteinViewer.render(latestGlobal.residues, latestGlobal.helices, null);
+    window.ProteinViewer.render(latestGlobal.residues, latestGlobal.helices);
   } else if (currentView === "mine" && latestMine) {
-    window.ProteinViewer.render(latestMine.residues, latestMine.helices, latestMine.changedResidues);
+    window.ProteinViewer.render(latestMine.residues, latestMine.helices);
   } else if (latestGlobal) {
-    window.ProteinViewer.render(latestGlobal.residues, latestGlobal.helices, null);
+    window.ProteinViewer.render(latestGlobal.residues, latestGlobal.helices);
   }
 }
 
@@ -171,8 +171,7 @@ async function contributionLoop() {
             els.unitFill.style.width = percent + "%";
             latestMine = {
               residues: message.residues,
-              helices,
-              changedResidues: message.changedResidues
+              helices
             };
             if (currentView === "mine") renderCurrentView();
           } else if (message.type === "done") {
@@ -209,6 +208,7 @@ async function contributionLoop() {
   els.deviceStatus.textContent = "paused";
   els.unitPct.textContent = "0%";
   els.unitFill.style.width = "0%";
+  els.runBtn.disabled = false;
 }
 
 els.runBtn.addEventListener("click", () => {
@@ -217,8 +217,9 @@ els.runBtn.addEventListener("click", () => {
   els.runBtn.classList.toggle("running", contributing);
   if (contributing) {
     contributionLoop();
-  } else if (worker) {
-    worker.postMessage({ type: "stop" });
+  } else {
+    els.runBtn.disabled = true;
+    if (worker) worker.postMessage({ type: "stop" });
   }
 });
 
